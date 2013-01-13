@@ -36,8 +36,11 @@ import supybot.callbacks as callbacks
 
 
 class SeLoger(callbacks.Plugin):
-    """Add the help for "@plugin help SeLoger" here
-    This should describe *how* to use this plugin."""
+    """This plugin search and alerts you in query if 
+    new ads are available.
+    Use "add" for a new search.
+    Use "list" to list you current search.
+    Use "rm" to remove an old search."""
     threaded = True
 
 
