@@ -90,47 +90,6 @@ class SqliteSeLogerDB(object):
         for db in self.dbs.itervalues():
             db.close()
 
-    def _search_seloger(self, cp, min_surf, max_price, owner_id):
-        """entry function for a search
-        cp: the postal code
-        min_surface: the minimal surface
-        max_price: the maximum rent
-
-        """
-        
-        self._get_and_get_next('http://ws.seloger.com/search.xml?cp=' + cp + \
-        '&idqfix=1&idtt=1&idtypebien=1,2&px_loyerbtw=NAN%2f' + max_price + \
-        '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1', owner_id)
-
-    def _get_and_get_next(self, url, owner_id):
-        """
-        function searching getting the xml pages (recursively) and putting
-        the results inside the database
-        url: the url giving the nice xml
-        """
-        db = self._getDb()
-        cursor = db.cursor()
-        tree = etree.parse(url)
-        root = tree.getroot()
-        annonces = root.find('annonces')
-
-        for annonce in annonces:
-            values_list=[]
-            for val in val_xml:
-                if annonce.find(val) is None or annonce.find(val).text is None:
-                    values_list.append('Unknown')
-                else:
-                    values_list.append(annonce.find(val).text)
-            cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
-            annonce_id = annonce.find('idAnnonce').text
-            uniq_id = str(annonce_id) + 'Z' + str(owner_id)
-            cursor.execute("INSERT INTO map VALUES (?,?,?,?)", (uniq_id, annonce_id, '1', owner_id ))
-            db.commit()
-
-        if tree.xpath('//recherche/pageSuivante'):
-            self._get_and_get_next(tree.xpath('//recherche/pageSuivante')[0].text)
-
-
     def _getDb(self):
         try:
             import sqlite3
@@ -210,6 +169,56 @@ class SqliteSeLogerDB(object):
         db.commit()
         return db
 
+    def _get_annonce(self, idAnnonce):
+        db = self._getDb()
+        db.row_factory = dict_factory
+        cursor = db.cursor()
+        cursor.execute("""SELECT * FROM results WHERE idAnnonce = (?)""", (idAnnonce, ))
+        return cursor.fetchone()
+
+    def _search_seloger(self, cp, min_surf, max_price, owner_id):
+        """entry function for a search
+        cp: the postal code
+        min_surface: the minimal surface
+        max_price: the maximum rent
+
+        """
+        
+        self._get_and_get_next('http://ws.seloger.com/search.xml?cp=' + cp + \
+        '&idqfix=1&idtt=1&idtypebien=1,2&px_loyerbtw=NAN%2f' + max_price + \
+        '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1', owner_id)
+
+    def _get_and_get_next(self, url, owner_id):
+        """
+        function searching getting the xml pages (recursively) and putting
+        the results inside the database
+        url: the url giving the nice xml
+        """
+        db = self._getDb()
+        cursor = db.cursor()
+        tree = etree.parse(url)
+        root = tree.getroot()
+        annonces = root.find('annonces')
+
+        for annonce in annonces:
+            values_list=[]
+            for val in val_xml:
+                if annonce.find(val) is None or annonce.find(val).text is None:
+                    values_list.append('Unknown')
+                else:
+                    values_list.append(annonce.find(val).text)
+            cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
+            annonce_id = annonce.find('idAnnonce').text
+            uniq_id = str(annonce_id) + 'Z' + str(owner_id)
+            cursor.execute("INSERT INTO map VALUES (?,?,?,?)", (uniq_id, annonce_id, '1', owner_id ))
+            db.commit()
+
+        if tree.xpath('//recherche/pageSuivante'):
+            self._get_and_get_next(tree.xpath('//recherche/pageSuivante')[0].text)
+
+
+
+
     def add_search(self, owner_id, cp, min_surf, max_price):
         db = self._getDb()
         cursor = db.cursor()
@@ -251,13 +260,6 @@ class SqliteSeLogerDB(object):
         cursor.execute("""SELECT * FROM searches WHERE owner_id = (?)""", (owner_id, ))
         return cursor.fetchall()
 
-    def _get_annonce(self, idAnnonce):
-        db = self._getDb()
-        db.row_factory = dict_factory
-        cursor = db.cursor()
-        cursor.execute("""SELECT * FROM results WHERE idAnnonce = (?)""", (idAnnonce, ))
-        return cursor.fetchone()
-
 
     def get_new(self):
         db = self._getDb()
@@ -293,6 +295,7 @@ class SeLoger(callbacks.Plugin):
     def __init__(self,irc):
         self.__parent = super(Random, self)
         self.__parent.__init__(irc)
+        self.backend = SqliteSeLogerDB()
 
     ### the external methods
 
@@ -324,34 +327,34 @@ class SeLoger(callbacks.Plugin):
  
     def AddSearch(self, user, pc, min_surf, max_price):
         """this function adds a search"""
-        print "test"
+        self.backend.add_search(user, pc, min_surf, max_price)
+        irc.reply('Done')
+
     
     def DisableSearch(self, user, id_search):
         """this function disables a search"""
-        print "test"
+        self.backend.disable_search(id_search)
+        irc.reply('Done')
+
 
     def ListSearch(self, user):
         """this function list the current searches"""
-        print "test"
-
-    def UpdateAdds(self):
-        print "test"
-
-    def PrintAdds(self):
-        print "test"
+        searches = self.get_search(self, user)
+        for search in searches:
+            irc.reply("ID: " + search['search_id'] + "=> surface >=" + search['min_surf'] + " rent <=" + search['max_price'] + " cp =" + search['cp'])
 
 Class = SeLoger
 
-db=SqliteSeLogerDB()
-db._getDb()
-db.add_search('kakwa', '75014', '20', '800')
-db.add_search('kakwaa', '75014', '20', '800')
+#db=SqliteSeLogerDB()
+#db._getDb()
+#db.add_search('kakwa', '75014', '20', '800')
+#db.add_search('kakwaa', '75014', '20', '800')
 #db.disable_search('0')
 #db.disable_search('1')
 #db.disable_search('2')
 
-db.do_searches()
-print db.get_new()
-print db.get_search('kakwa')
+#db.do_searches()
+#print db.get_new()
+#print db.get_search('kakwa')
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
