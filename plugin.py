@@ -302,7 +302,7 @@ class SeLoger(callbacks.Plugin):
         Adds a new search for you
         """
         user = irc.msg.nick 
-        self._addSearch(user, pc, min_surf, max_price)
+        self._addSearch(str(user), str(pc), str(min_surf), str(max_price))
         irc.reply('Done')
     sladd = wrap(sladd, ['int', 'int', 'int'])
 
