@@ -335,16 +335,21 @@ class SeLoger(callbacks.Plugin):
         t.start()
 
     def _update_and_print(self,irc):
+        time.sleep(60)
         self.backend.do_searches()
         for add in self.backend.get_new():
             self._print_add(add,irc)
-        time.sleep(60)
 
     def _print_add(self,add,irc):
-        irc.reply('>>>> NEW <<<<')
-        irc.reply(add['idAnnonce'])
-        irc.reply(add['descriptif'])
-        time.sleep(5)
+        name = add['owner_id']
+        irc.reply(name + '>>>> NEW <<<<', prefixNick=False)
+        irc.reply(name + add['permaLien'], prefixNick=False)
+        irc.reply(name + 'prix: ' + add['prix'] + add['prixUnite'] + 'pieces: ' + add['nbPiece'] + 'surface: ' + add['surface'] + 'code postal: ' + add['cp'], prefixNick=False)
+        irc.reply(name + add['proximite'], prefixNick=False)
+        irc.reply(name + 'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False)
+        irc.reply(name + add['descriptif'], prefixNick=False)
+        irc.reply(name + '<<<<<< >>>>>>', prefixNick=False)
+        time.sleep(10)
 
 
  
