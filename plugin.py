@@ -292,11 +292,11 @@ class SeLoger(callbacks.Plugin):
     Use "sllist" to list you current search.
     Use "sldisable" to remove an old search."""
     threaded = True
-    self.backend = SqliteSeLogerDB()
 
-#    def __init__(self,irc):
-#        self.__parent = super(SeLoger, self)
-#        self.__parent.__init__(irc)
+    def __init__(self,irc):
+        self.__parent = super(SeLoger, self)
+        self.__parent.__init__(irc)
+        self.backend = SqliteSeLogerDB()
 
     ### the external methods
 
