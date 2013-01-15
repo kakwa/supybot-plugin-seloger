@@ -344,6 +344,7 @@ class SeLoger(callbacks.Plugin):
         irc.reply('>>>> NEW <<<<')
         irc.reply(add['idAnnonce'])
         irc.reply(add['descriptif'])
+        time.sleep(5)
 
 
  
