@@ -256,7 +256,7 @@ class SqliteSeLogerDB(object):
         db.commit()
 
     def get_search(self, owner_id):
-    	print ">>>SELOGER: GET_NEW"
+    	print ">>>SELOGER: GET_SEARCH"
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -265,6 +265,7 @@ class SqliteSeLogerDB(object):
 
 
     def get_new(self):
+    	print ">>>SELOGER: GET_NEW"
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
