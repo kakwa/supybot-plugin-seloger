@@ -307,7 +307,7 @@ class SeLoger(callbacks.Plugin):
         user = plugins.getUserName(self.by)
         self._addSearch(user, pc, min_surf, max_price)
         irc.reply('Done')
-    sladd = wrap(sladd, 'pc', 'min_surf', 'max_price')
+    sladd = wrap(sladd, ['pc', 'min_surf', 'max_price'])
 
         
     def sldisable(self, irc, msg, args, id_search):
@@ -317,7 +317,7 @@ class SeLoger(callbacks.Plugin):
         user = plugins.getUserName(self.by)
         self._disableSearch(user, id_search)
         irc.reply('Done')
-    sldisable = wrap(sldisable, 'id_search')
+    sldisable = wrap(sldisable, ['id_search'])
 
  
     def sllist(self, irc, msg, args):
