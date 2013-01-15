@@ -87,9 +87,6 @@ class SqliteSeLogerDB(object):
     def __init__(self, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
-        t = threading.Thread(None,self._update_db)
-        t.start()
-
 
 
     def close(self):
@@ -298,6 +295,8 @@ class SeLoger(callbacks.Plugin):
         self.__parent = super(SeLoger, self)
         self.__parent.__init__(irc)
         self.backend = SqliteSeLogerDB()
+        t = threading.Thread(None,self._update_db)
+        t.start()
 
     ### the external methods
 
