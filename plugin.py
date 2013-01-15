@@ -344,25 +344,24 @@ class SeLoger(callbacks.Plugin):
     def _update_db(self):
         while True:
             self.backend.do_searches()
-            time.sleep(120)
+            time.sleep(10)
 
 
     def _print(self,irc):
         time.sleep(60)
-        while True:
-            for add in self.backend.get_new():
-                self._print_add(add,irc)
+        for add in self.backend.get_new():
+            self._print_add(add,irc)
         #time.sleep(60)
 
     def _print_add(self,add,irc):
         name = add['owner_id']
-        irc.reply(name + ': ' +'>>>> NEW <<<<', prefixNick=False)
-        irc.reply(name + ': ' +add['permaLien'], prefixNick=False)
-        irc.reply(name + ': ' +'Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface']  + add['surfaceUnite'] + '| Code postal: ' + add['cp'], prefixNick=False)
-        irc.reply(name + ': ' +'Proximite: ' + add['proximite'], prefixNick=False)
-        irc.reply(name + ': ' +'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False)
-        irc.reply(name + ': ' +add['descriptif'], prefixNick=False)
-        irc.reply(name + ': ' +'<<<<<< >>>>>>', prefixNick=False)
+        irc.reply('>>>> NEW <<<<', prefixNick=False, to=name)
+        irc.reply(add['permaLien'], prefixNick=False, to=name)
+        irc.reply('Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface']  + add['surfaceUnite'] + '| Code postal: ' + add['cp'], prefixNick=False, to=name)
+        irc.reply('Proximite: ' + add['proximite'], prefixNick=False, to=name)
+        irc.reply('https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False, to=name)
+        irc.reply(add['descriptif'], prefixNick=False, to=name)
+        irc.reply('<<<<<< >>>>>>', prefixNick=False, to=name)
 
 
  
