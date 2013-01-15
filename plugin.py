@@ -329,9 +329,8 @@ class SeLoger(callbacks.Plugin):
     def __call__(self, irc, msg):
         self.__parent.__call__(irc, msg)
         irc = callbacks.SimpleProxy(irc, msg)
-        try:
-            t = threading.Thread(None,self._update_and_print)
-            t.start()
+        t = threading.Thread(None,self._update_and_print)
+        t.start()
 
     def _update_and_print(self):
         self.backend.do_searches()
