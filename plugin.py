@@ -314,7 +314,7 @@ class SeLoger(callbacks.Plugin):
         """disable <id_search>
         Disables a search
         """
-        user = plugins.getUserName(self.by)
+        user = irc.msg.nick
         self._disableSearch(user, id_search)
         irc.reply('Done')
     sldisable = wrap(sldisable, [many('anything')])
