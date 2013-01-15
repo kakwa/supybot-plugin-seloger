@@ -292,11 +292,11 @@ class SeLoger(callbacks.Plugin):
     Use "sllist" to list you current search.
     Use "sldisable" to remove an old search."""
     threaded = True
+    self.backend = SqliteSeLogerDB()
 
-    def __init__(self,irc):
-        self.__parent = super(SeLoger, self)
-        self.__parent.__init__(irc)
-        self.backend = SqliteSeLogerDB()
+#    def __init__(self,irc):
+#        self.__parent = super(SeLoger, self)
+#        self.__parent.__init__(irc)
 
     ### the external methods
 
@@ -306,6 +306,7 @@ class SeLoger(callbacks.Plugin):
         """
         user = plugins.getUserName(self.by)
         self._addSearch(user, pc, min_surf, max_price)
+        irc.reply('Done')
     sladd = wrap(sladd)
 
         
@@ -315,6 +316,7 @@ class SeLoger(callbacks.Plugin):
         """
         user = plugins.getUserName(self.by)
         self._disableSearch(user, id_search)
+        irc.reply('Done')
     sldisable = wrap(sldisable)
 
  
@@ -322,9 +324,12 @@ class SeLoger(callbacks.Plugin):
         """list
         list all your searches
         """
-        user = plugins.getUserName(self.by)
-        self._listSearch(user)
+        user = irc.msg.nick #plugins.getUserName(self.by)
+        self._listSearch(user, irc)
+        irc.reply('Done')
     sllist = wrap(sllist)
+
+    ### The internal methods
 
     def __call__(self, irc, msg):
         self.__parent.__call__(irc, msg)
@@ -344,21 +349,18 @@ class SeLoger(callbacks.Plugin):
         irc.reply(add['descriptif'])
 
 
-    ### The internal methods
  
     def _addSearch(self, user, pc, min_surf, max_price):
         """this function adds a search"""
         self.backend.add_search(user, pc, min_surf, max_price)
-        irc.reply('Done')
 
     
     def _disableSearch(self, user, id_search):
         """this function disables a search"""
         self.backend.disable_search(id_search)
-        irc.reply('Done')
 
 
-    def _listSearch(self, user):
+    def _listSearch(self, user, irc):
         """this function list the current searches"""
         searches = self.get_search(self, user)
         for search in searches:
