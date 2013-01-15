@@ -103,9 +103,9 @@ class SqliteSeLogerDB(object):
         if filename in self.dbs:
             return self.dbs[filename]
         if os.path.exists(filename):
-            self.dbs[filename] = sqlite3.connect(filename)
+            self.dbs[filename] = sqlite3.connect(filename, check_same_thread = False)
             return self.dbs[filename]
-        db = sqlite3.connect(filename)
+        db = sqlite3.connect(filename, check_same_thread = False)
         self.dbs[filename] = db
         cursor = db.cursor()
 
