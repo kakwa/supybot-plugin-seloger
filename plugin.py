@@ -358,7 +358,7 @@ class SeLoger(callbacks.Plugin):
         irc.reply(name + ': ' +'>>>> NEW <<<<', prefixNick=False)
         irc.reply(name + ': ' +add['permaLien'], prefixNick=False)
         irc.reply(name + ': ' +'Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface']  + add['surfaceUnite'] + '| Code postal: ' + add['cp'], prefixNick=False)
-        irc.reply(name + ': ' +'Proximite: ' add['proximite'], prefixNick=False)
+        irc.reply(name + ': ' +'Proximite: ' + add['proximite'], prefixNick=False)
         irc.reply(name + ': ' +'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False)
         irc.reply(name + ': ' +add['descriptif'], prefixNick=False)
         irc.reply(name + ': ' +'<<<<<< >>>>>>', prefixNick=False)
