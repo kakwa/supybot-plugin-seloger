@@ -355,6 +355,7 @@ class SeLoger(callbacks.Plugin):
 
     def _print_add(self,add,irc):
         name = add['owner_id']
+        print ">>>SELOGER: sending ADD"
         irc.reply('>>>> NEW <<<<', prefixNick=False, to=name)
         irc.reply(add['permaLien'], prefixNick=False, to=name)
         irc.reply('Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface']  + add['surfaceUnite'] + '| Code postal: ' + add['cp'], prefixNick=False, to=name)
