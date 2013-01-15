@@ -297,7 +297,6 @@ class SeLoger(callbacks.Plugin):
         self.__parent = super(Random, self)
         self.__parent.__init__(irc)
         self.backend = SqliteSeLogerDB()
-        self.irc = irc
 
     ### the external methods
 
@@ -330,19 +329,19 @@ class SeLoger(callbacks.Plugin):
     def __call__(self, irc, msg):
         self.__parent.__call__(irc, msg)
         irc = callbacks.SimpleProxy(irc, msg)
-        t = threading.Thread(None,self._update_and_print)
+        t = threading.Thread(None,self._update_and_print, None, (irc,))
         t.start()
 
-    def _update_and_print(self):
+    def _update_and_print(self,irc):
         self.backend.do_searches()
         for add in self.backend.get_new():
-            self._print_add(add)
+            self._print_add(add,irc)
         time.sleep(60)
 
-    def _print_add(self,add):
-        self.irc.reply('>>>> NEW <<<<')
-        self.irc.reply(add['idAnnonce']
-        self.irc.reply(add['descriptif']
+    def _print_add(self,add,irc):
+        irc.reply('>>>> NEW <<<<')
+        irc.reply(add['idAnnonce']
+        irc.reply(add['descriptif']
 
 
     ### The internal methods
