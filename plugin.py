@@ -362,7 +362,7 @@ class SeLoger(callbacks.Plugin):
 
     def _listSearch(self, user, irc):
         """this function list the current searches"""
-        searches = self.backend.get_search(self, user)
+        searches = self.backend.get_search(user)
         for search in searches:
             irc.reply("ID: " + search['search_id'] + "=> surface >=" + search['min_surf'] + " rent <=" + search['max_price'] + " cp =" + search['cp'])
 
