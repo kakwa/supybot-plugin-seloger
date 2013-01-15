@@ -32,6 +32,7 @@ import os
 import time
 from lxml import etree
 import threading
+import md5
 
 import supybot.utils as utils
 import supybot.ircdb as ircdb
@@ -117,7 +118,7 @@ class SqliteSeLogerDB(object):
         #min_surf: minimum surface of the annonce
         #max_price: maximum rent
         cursor.execute("""CREATE TABLE searches (
-                          search_id INTEGER PRIMARY KEY,
+                          search_id TEXT PRIMARY KEY,
                           owner_id TEXT, 
                           flag_active INTEGER,
                           cp TEXT,
@@ -210,7 +211,7 @@ class SqliteSeLogerDB(object):
                     values_list.append(annonce.find(val).text)
             cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
             annonce_id = annonce.find('idAnnonce').text
-            uniq_id = str(annonce_id) + 'Z' + str(owner_id)
+            uniq_id = md5.new(owner_id + annonce_id).hexdigest()
             cursor.execute("INSERT INTO map VALUES (?,?,?,?)", (uniq_id, annonce_id, '1', owner_id ))
             db.commit()
 
@@ -223,12 +224,8 @@ class SqliteSeLogerDB(object):
     def add_search(self, owner_id, cp, min_surf, max_price):
         db = self._getDb()
         cursor = db.cursor()
-        cursor.execute("SELECT MAX(search_id) FROM searches")
-        max_id = cursor.fetchone()
-        if max_id[0] is not None:
-            search_id = max_id[0] + 1
-        else:
-            search_id = 0
+
+        search_id = md5.new(owner_id + cp + min_surf + max_price).hexdigest()
 
         cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)", (search_id, owner_id, '1', cp, min_surf, max_price))
         db.commit()
