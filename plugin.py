@@ -31,6 +31,7 @@
 import os
 import time
 from lxml import etree
+import threading
 
 import supybot.utils as utils
 import supybot.ircdb as ircdb
@@ -299,45 +300,63 @@ class SeLoger(callbacks.Plugin):
 
     ### the external methods
 
-    def add(self, irc, msg, args, pc, min_surf, max_price):
+    def sladd(self, irc, msg, args, pc, min_surf, max_price):
         """add <postal code> <min surface> <max price>
         Adds a new search for you
         """
         user = plugins.getUserName(self.by)
-        self.AddSearch(user, pc, min_surf, max_price)
+        self._addSearch(user, pc, min_surf, max_price)
 
         
-    def disable(self, irc, msg, args, id_search):
+    def sldisable(self, irc, msg, args, id_search):
         """disable <id_search>
         Disables a search
         """
         user = plugins.getUserName(self.by)
-        self.DisableSearch(user, id_search)
+        self._disableSearch(user, id_search)
 
  
-    def disable(self, irc, msg, args):
+    def sllist(self, irc, msg, args):
         """list
         list all your searches
         """
         user = plugins.getUserName(self.by)
-        self.ListSearch(user)
+        self._listSearch(user)
+
+    def __call__(self, irc, msg):
+        self.__parent.__call__(irc, msg)
+        irc = callbacks.SimpleProxy(irc, msg)
+        try:
+            t = threading.Thread(None,self._update_and_print)
+            t.start()
+
+    def _update_and_print(self):
+        self.backend.do_searches()
+        for add in self.backend.get_new():
+            self._print_add(add)
+        time.sleep(60)
+
+    def _print_add(self,add):
+        irc.reply('>>>> NEW <<<<')
+        irc.reply(add['idAnnonce']
+        irc.reply(add['descriptif']
 
 
     ### The internal methods
  
-    def AddSearch(self, user, pc, min_surf, max_price):
+    def _addSearch(self, user, pc, min_surf, max_price):
         """this function adds a search"""
         self.backend.add_search(user, pc, min_surf, max_price)
         irc.reply('Done')
 
     
-    def DisableSearch(self, user, id_search):
+    def _disableSearch(self, user, id_search):
         """this function disables a search"""
         self.backend.disable_search(id_search)
         irc.reply('Done')
 
 
-    def ListSearch(self, user):
+    def _listSearch(self, user):
         """this function list the current searches"""
         searches = self.get_search(self, user)
         for search in searches:
