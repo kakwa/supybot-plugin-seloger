@@ -304,10 +304,10 @@ class SeLoger(callbacks.Plugin):
         """add <postal code> <min surface> <max price>
         Adds a new search for you
         """
-        user = plugins.getUserName(self.by)
+        user = irc.msg.nick 
         self._addSearch(user, pc, min_surf, max_price)
         irc.reply('Done')
-    sladd = wrap(sladd, ['anything','anything','anything'])
+    sladd = wrap(sladd, ['int', 'int', 'int'])
 
         
     def sldisable(self, irc, msg, args, id_search):
@@ -317,7 +317,7 @@ class SeLoger(callbacks.Plugin):
         user = irc.msg.nick
         self._disableSearch(user, id_search)
         irc.reply('Done')
-    sldisable = wrap(sldisable, ['anything'])
+    sldisable = wrap(sldisable, ['int'])
 
  
     def sllist(self, irc, msg, args):
