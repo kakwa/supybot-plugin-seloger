@@ -87,6 +87,10 @@ class SqliteSeLogerDB(object):
     def __init__(self, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
+        t = threading.Thread(None,self._update_db)
+        t.start()
+
+
 
     def close(self):
         for db in self.dbs.itervalues():
@@ -331,12 +335,16 @@ class SeLoger(callbacks.Plugin):
     def __call__(self, irc, msg):
         self.__parent.__call__(irc, msg)
         irc = callbacks.SimpleProxy(irc, msg)
-        t = threading.Thread(None,self._update_and_print, None, (irc,))
+        t = threading.Thread(None,self._print, None, (irc,))
         t.start()
 
-    def _update_and_print(self,irc):
-        time.sleep(60)
-        self.backend.do_searches()
+    def _update_db(self):
+        while True:
+            self.backend.do_searches()
+            time.sleep('60')
+
+
+    def _print(self,irc):
         for add in self.backend.get_new():
             self._print_add(add,irc)
 
@@ -349,7 +357,6 @@ class SeLoger(callbacks.Plugin):
         irc.reply(name + 'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False)
         irc.reply(name + add['descriptif'], prefixNick=False)
         irc.reply(name + '<<<<<< >>>>>>', prefixNick=False)
-        time.sleep(10)
 
 
  
