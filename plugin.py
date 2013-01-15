@@ -302,6 +302,7 @@ class SeLoger(callbacks.Plugin):
         self.backend = SqliteSeLogerDB()
         t = threading.Thread(None,self._update_db)
         t.start()
+        self._reply_loop(irc)
 
     ### the external methods
 
@@ -336,9 +337,10 @@ class SeLoger(callbacks.Plugin):
 
     ### The internal methods
 
-    def __call__(self, irc, msg):
-        self.__parent.__call__(irc, msg)
-        irc = callbacks.SimpleProxy(irc, msg)
+#    def __call__(self, irc, msg):
+    def _reply_loop(self,irc):
+#        self.__parent.__call__(irc, msg)
+#        irc = callbacks.SimpleProxy(irc, msg)
         t = threading.Thread(None,self._print, None, (irc,))
         t.start()
 
@@ -350,9 +352,10 @@ class SeLoger(callbacks.Plugin):
 
     def _print(self,irc):
         time.sleep(60)
-        for add in self.backend.get_new():
-            self._print_add(add,irc)
-        #time.sleep(60)
+        while True:
+            for add in self.backend.get_new():
+                self._print_add(add,irc)
+            time.sleep(60)
 
     def _print_add(self,add,irc):
         name = add['owner_id']
