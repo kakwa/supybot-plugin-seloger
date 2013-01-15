@@ -340,7 +340,7 @@ class SeLoger(callbacks.Plugin):
     def _update_db(self):
         while True:
             self.backend.do_searches()
-            time.sleep('60')
+            time.sleep(60)
 
 
     def _print(self,irc):
