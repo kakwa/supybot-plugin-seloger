@@ -340,8 +340,8 @@ class SeLoger(callbacks.Plugin):
 
     def _print_add(self,add,irc):
         irc.reply('>>>> NEW <<<<')
-        irc.reply(add['idAnnonce']
-        irc.reply(add['descriptif']
+        irc.reply(add['idAnnonce'])
+        irc.reply(add['descriptif'])
 
 
     ### The internal methods
