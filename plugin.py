@@ -353,13 +353,13 @@ class SeLoger(callbacks.Plugin):
 
     def _print_add(self,add,irc):
         name = add['owner_id']
-        irc.reply( name + '>>>> NEW <<<<')
-        irc.reply(name + add['permaLien'], prefixNick=False)
-        irc.reply(name + 'prix: ' + add['prix'] + add['prixUnite'] + 'pieces: ' + add['nbPiece'] + 'surface: ' + add['surface'] + 'code postal: ' + add['cp'], prefixNick=False)
-        irc.reply(name + add['proximite'], prefixNick=False)
-        irc.reply(name + 'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False)
-        irc.reply(name + add['descriptif'], prefixNick=False)
-        irc.reply(name + '<<<<<< >>>>>>', prefixNick=False)
+        irc.reply(name + ': ' +'>>>> NEW <<<<', prefixNick=False)
+        irc.reply(name + ': ' +add['permaLien'], prefixNick=False)
+        irc.reply(name + ': ' +'prix: ' + add['prix'] + add['prixUnite'] + ' pieces: ' + add['nbPiece'] + ' surface: ' + add['surface'] + ' code postal: ' + add['cp'], prefixNick=False)
+        irc.reply(name + ': ' +add['proximite'], prefixNick=False)
+        irc.reply(name + ': ' +'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False)
+        irc.reply(name + ': ' +add['descriptif'], prefixNick=False)
+        irc.reply(name + ': ' +'<<<<<< >>>>>>', prefixNick=False)
 
 
  
@@ -377,7 +377,7 @@ class SeLoger(callbacks.Plugin):
         """this function list the current searches"""
         searches = self.backend.get_search(user)
         for search in searches:
-            irc.reply("ID: " + search['search_id'] + "=> surface >=" + search['min_surf'] + " rent <=" + search['max_price'] + " cp =" + search['cp'])
+            irc.reply("ID:'" + search['search_id'] + "' | 'Surface >= " + search['min_surf'] + "' | 'Loyer <= " + search['max_price'] + "' | 'cp == " + search['cp'] + "'")
 
 Class = SeLoger
 
