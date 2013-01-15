@@ -348,6 +348,7 @@ class SeLoger(callbacks.Plugin):
 
 
     def _print(self,irc):
+        time.sleep(60)
         while True:
             for add in self.backend.get_new():
                 self._print_add(add,irc)
