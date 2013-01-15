@@ -223,6 +223,7 @@ class SqliteSeLogerDB(object):
 
 
     def add_search(self, owner_id, cp, min_surf, max_price):
+    	print ">>>SELOGER: ADD SEARCH"
         db = self._getDb()
         cursor = db.cursor()
 
@@ -233,6 +234,7 @@ class SqliteSeLogerDB(object):
         return search_id
 
     def do_searches(self):
+    	print ">>>SELOGER: DO SEARCH"
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -246,6 +248,7 @@ class SqliteSeLogerDB(object):
             #row = cursor.fetchone()
 
     def disable_search(self, search_id):
+    	print ">>>SELOGER: DISABLE SEARCH"
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -253,6 +256,7 @@ class SqliteSeLogerDB(object):
         db.commit()
 
     def get_search(self, owner_id):
+    	print ">>>SELOGER: GET_NEW"
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
