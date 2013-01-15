@@ -294,7 +294,7 @@ class SeLoger(callbacks.Plugin):
     threaded = True
 
     def __init__(self,irc):
-        self.__parent = super(Random, self)
+        self.__parent = super(SeLoger, self)
         self.__parent.__init__(irc)
         self.backend = SqliteSeLogerDB()
 
