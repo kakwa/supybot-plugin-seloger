@@ -352,7 +352,7 @@ class SeLoger(callbacks.Plugin):
         while True:
             for add in self.backend.get_new():
                 self._print_add(add,irc)
-        time.sleep(60)
+        #time.sleep(60)
 
     def _print_add(self,add,irc):
         name = add['owner_id']
