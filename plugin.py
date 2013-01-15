@@ -288,9 +288,9 @@ class SqliteSeLogerDB(object):
 class SeLoger(callbacks.Plugin):
     """This plugin search and alerts you in query if 
     new ads are available.
-    Use "add" for a new search.
-    Use "list" to list you current search.
-    Use "disable" to remove an old search."""
+    Use "sladd" for a new search.
+    Use "sllist" to list you current search.
+    Use "sldisable" to remove an old search."""
     threaded = True
 
     def __init__(self,irc):
@@ -306,6 +306,7 @@ class SeLoger(callbacks.Plugin):
         """
         user = plugins.getUserName(self.by)
         self._addSearch(user, pc, min_surf, max_price)
+    sladd = wrap(sladd)
 
         
     def sldisable(self, irc, msg, args, id_search):
@@ -314,6 +315,7 @@ class SeLoger(callbacks.Plugin):
         """
         user = plugins.getUserName(self.by)
         self._disableSearch(user, id_search)
+    sldisable = wrap(sldisable)
 
  
     def sllist(self, irc, msg, args):
@@ -322,6 +324,7 @@ class SeLoger(callbacks.Plugin):
         """
         user = plugins.getUserName(self.by)
         self._listSearch(user)
+    sllist = wrap(sllist)
 
     def __call__(self, irc, msg):
         self.__parent.__call__(irc, msg)
