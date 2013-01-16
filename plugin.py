@@ -289,7 +289,6 @@ class SqliteSeLogerDB(object):
         return return_annonces
 
 
-
 class SeLoger(callbacks.Plugin):
     """This plugin search and alerts you in query if 
     new ads are available.
@@ -314,7 +313,9 @@ class SeLoger(callbacks.Plugin):
         """
         user = irc.msg.nick 
         self._addSearch(str(user), str(pc), str(min_surf), str(max_price))
-        irc.reply('Done')
+        msg='Done sladd'
+        self._priv_msg(user,msg,irc)
+
     sladd = wrap(sladd, ['int', 'int', 'int'])
 
         
@@ -324,7 +325,8 @@ class SeLoger(callbacks.Plugin):
         """
         user = irc.msg.nick
         self._disableSearch(user, id_search)
-        irc.reply('Done')
+        msg='Done sldisable'
+        self._priv_msg(user,msg,irc)
     sldisable = wrap(sldisable, ['int'])
 
  
@@ -334,7 +336,9 @@ class SeLoger(callbacks.Plugin):
         """
         user = irc.msg.nick #plugins.getUserName(self.by)
         self._listSearch(user, irc)
-        irc.reply('Done')
+        msg='Done sllist'
+        self._priv_msg(user,msg,irc)
+
     sllist = wrap(sllist)
 
     ### The internal methods
@@ -371,6 +375,8 @@ class SeLoger(callbacks.Plugin):
             irc.queueMsg(ircmsgs.privmsg(name, add['descriptif']))
             irc.queueMsg(ircmsgs.privmsg(name, '<<<<<< >>>>>>'))
 
+    def _priv_msg(self,user,msg,irc):
+        irc.queueMsg(ircmsgs.privmsg(user,msg))
 
  
     def _addSearch(self, user, pc, min_surf, max_price):
