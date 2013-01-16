@@ -42,6 +42,7 @@ import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
 import supybot.world as world
+import unicodedata
 #import supybot.dbi as dbi
 
 #the elements we get from the xml
@@ -188,7 +189,7 @@ class SqliteSeLogerDB(object):
         max_price: the maximum rent
 
         """
-        
+        owner_id.lower() 
         self._get_and_get_next('http://ws.seloger.com/search.xml?cp=' + cp + \
         '&idqfix=1&idtt=1&idtypebien=1,2&px_loyerbtw=NAN%2f' + max_price + \
         '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1', owner_id)
@@ -199,6 +200,7 @@ class SqliteSeLogerDB(object):
         the results inside the database
         url: the url giving the nice xml
         """
+        owner_id.lower() 
         db = self._getDb()
         cursor = db.cursor()
         tree = etree.parse(url)
@@ -209,9 +211,9 @@ class SqliteSeLogerDB(object):
             values_list=[]
             for val in val_xml:
                 if annonce.find(val) is None or annonce.find(val).text is None:
-                    values_list.append('Unknown')
+                    values_list.append(u'Unknown')
                 else:
-                    values_list.append(annonce.find(val).text)
+                    values_list.append(unicode(annonce.find(val).text))
             cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
             annonce_id = annonce.find('idAnnonce').text
             uniq_id = md5.new(owner_id + annonce_id).hexdigest()
@@ -226,6 +228,7 @@ class SqliteSeLogerDB(object):
 
     def add_search(self, owner_id, cp, min_surf, max_price):
     	print ">>>SELOGER: ADD SEARCH"
+        owner_id.lower() 
         db = self._getDb()
         cursor = db.cursor()
 
@@ -259,6 +262,7 @@ class SqliteSeLogerDB(object):
 
     def get_search(self, owner_id):
     	print ">>>SELOGER: GET_SEARCH"
+        owner_id.lower() 
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -301,9 +305,10 @@ class SeLoger(callbacks.Plugin):
         self.__parent = super(SeLoger, self)
         self.__parent.__init__(irc)
         self.backend = SqliteSeLogerDB()
+        self.gettingLockLock = threading.Lock()
+        self.locks = {}
         t = threading.Thread(None,self._update_db)
         t.start()
-        self._reply_loop(irc)
 
     ### the external methods
 
@@ -343,10 +348,10 @@ class SeLoger(callbacks.Plugin):
 
     ### The internal methods
 
-#    def __call__(self, irc, msg):
-    def _reply_loop(self,irc):
-#        self.__parent.__call__(irc, msg)
-#        irc = callbacks.SimpleProxy(irc, msg)
+    def __call__(self, irc, msg):
+#    def _reply_loop(self,irc):
+        self.__parent.__call__(irc, msg)
+        irc = callbacks.SimpleProxy(irc, msg)
         t = threading.Thread(None,self._print, None, (irc,))
         t.start()
 
@@ -355,25 +360,69 @@ class SeLoger(callbacks.Plugin):
             self.backend.do_searches()
             time.sleep(10)
 
+    def _acquireLock(self, url, blocking=True):
+        try:
+            self.gettingLockLock.acquire()
+            try:
+                lock = self.locks[url]
+            except KeyError:
+                lock = threading.RLock()
+                self.locks[url] = lock
+            return lock.acquire(blocking=blocking)
+        finally:
+            self.gettingLockLock.release()
+
+    def _releaseLock(self, url):
+        self.locks[url].release()
+
 
     def _print(self,irc):
-        time.sleep(60)
-        while True:
+        if self._acquireLock('print', blocking=False):
             for add in self.backend.get_new():
                 self._print_add(add,irc)
-            time.sleep(60)
+            time.sleep(0.1)
+            self._releaseLock('print')
 
     def _print_add(self,add,irc):
         print ">>>SELOGER: sending ADD"
-        for irc in world.ircs:
-            name = add['owner_id']
-            irc.queueMsg(ircmsgs.privmsg(name, '>>>> NEW <<<<'))
-            irc.queueMsg(ircmsgs.privmsg(name, add['permaLien']))
-            irc.queueMsg(ircmsgs.privmsg(name, 'Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface'] + add['surfaceUnite'] + '| Code postal: ' + add['cp']))
-            irc.queueMsg(ircmsgs.privmsg(name, 'Proximite: ' + add['proximite']))
-            irc.queueMsg(ircmsgs.privmsg(name, 'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude']))
-            irc.queueMsg(ircmsgs.privmsg(name, add['descriptif']))
-            irc.queueMsg(ircmsgs.privmsg(name, '<<<<<< >>>>>>'))
+        user = str(add['owner_id'])
+        msg = ' '
+        irc.reply(msg,to=user,private=True)
+        #self._prir,msg,irc)
+        #self._prir,msg,irc)
+
+        price = ircutils.mircColor('Prix: ' + add['prix'] + add['prixUnite'], 8)
+        rooms  = ircutils.mircColor('Pieces: ' + add['nbPiece'],4) 
+        surface =  ircutils.mircColor('Surface: ' + add['surface'] + add['surfaceUnite'],13)
+        msg = price + ' | ' + rooms + ' | ' + surface
+        irc.reply(msg,to=user,private=True)
+
+        cp = ircutils.mircColor('Code postal: ' + add['cp'], 11) 
+        city = ircutils.mircColor('Ville: ' + add['ville'], 12)  
+        date = ircutils.mircColor('Date ajout: ' + add['dtCreation'], 2)
+        msg = city + ' | ' + cp + ' | ' + date
+        irc.reply(msg,to=user,private=True)
+        #self._prir,msg,irc)
+
+        msg = ircutils.mircColor('Localisation: https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'],3)
+        irc.reply(msg,to=user,private=True)
+
+
+        msg = ircutils.mircColor('Proximite: ' + add['proximite'],2)
+        irc.reply(msg,to=user,private=True)
+
+        #self._prir,msg,irc)
+        msg = u'Description: ' + add['descriptif']
+        msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
+        irc.reply(msg,to=user,private=True)
+
+        #self._prir,msg,irc)
+        msg = ircutils.mircColor('Lien: ' + add['permaLien'],9)
+        irc.reply(msg,to=user,private=True)
+        msg =  ' '
+        irc.reply(msg,to=user,private=True)
+ 
+        #self._priv_msg(user,msg,irc)
 
     def _priv_msg(self,user,msg,irc):
         irc.queueMsg(ircmsgs.privmsg(user,msg))
