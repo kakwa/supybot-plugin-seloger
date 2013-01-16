@@ -40,6 +40,8 @@ from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
+import supybot.ircmsgs as ircmsgs
+import supybot.world as world
 #import supybot.dbi as dbi
 
 #the elements we get from the xml
@@ -358,15 +360,16 @@ class SeLoger(callbacks.Plugin):
             time.sleep(60)
 
     def _print_add(self,add,irc):
-        name = add['owner_id']
         print ">>>SELOGER: sending ADD"
-        irc.reply('>>>> NEW <<<<', prefixNick=False, to=name)
-        irc.reply(add['permaLien'], prefixNick=False, to=name)
-        irc.reply('Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface']  + add['surfaceUnite'] + '| Code postal: ' + add['cp'], prefixNick=False, to=name)
-        irc.reply('Proximite: ' + add['proximite'], prefixNick=False, to=name)
-        irc.reply('https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'], prefixNick=False, to=name)
-        irc.reply(add['descriptif'], prefixNick=False, to=name)
-        irc.reply('<<<<<< >>>>>>', prefixNick=False, to=name)
+        for irc in world.ircs:
+            name = add['owner_id']
+            irc.queueMsg(ircmsgs.privmsg(name, '>>>> NEW <<<<'))
+            irc.queueMsg(ircmsgs.privmsg(name, add['permaLien']))
+            irc.queueMsg(ircmsgs.privmsg(name, 'Prix: ' + add['prix'] + add['prixUnite'] + '| Pieces: ' + add['nbPiece'] + '| Surface: ' + add['surface'] + add['surfaceUnite'] + '| Code postal: ' + add['cp']))
+            irc.queueMsg(ircmsgs.privmsg(name, 'Proximite: ' + add['proximite']))
+            irc.queueMsg(ircmsgs.privmsg(name, 'https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude']))
+            irc.queueMsg(ircmsgs.privmsg(name, add['descriptif']))
+            irc.queueMsg(ircmsgs.privmsg(name, '<<<<<< >>>>>>'))
 
 
  
