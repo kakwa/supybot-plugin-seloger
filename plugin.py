@@ -219,7 +219,7 @@ class SqliteSeLogerDB(object):
             db.commit()
 
         if tree.xpath('//recherche/pageSuivante'):
-            self._get_and_get_next(tree.xpath('//recherche/pageSuivante')[0].text)
+            self._get_and_get_next(tree.xpath('//recherche/pageSuivante')[0].text, owner_id)
 
 
 
