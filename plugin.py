@@ -356,9 +356,7 @@ class SeLoger(callbacks.Plugin):
         t.start()
 
     def _update_db(self):
-        while True:
-            self.backend.do_searches()
-            time.sleep(150)
+        self.backend.do_searches()
 
     def _acquireLock(self, url, blocking=True):
         try:
