@@ -257,7 +257,7 @@ class SqliteSeLogerDB(object):
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("UPDATE searches SET flag_active = 0 WHERE search_id = %s" % search_id)
+        cursor.execute("UPDATE searches SET flag_active = 0 WHERE search_id = (?)", (search_id, ))
         db.commit()
 
     def get_search(self, owner_id):
@@ -307,8 +307,8 @@ class SeLoger(callbacks.Plugin):
         self.backend = SqliteSeLogerDB()
         self.gettingLockLock = threading.Lock()
         self.locks = {}
-        t = threading.Thread(None,self._update_db)
-        t.start()
+        #t = threading.Thread(None,self._update_db)
+        #t.start()
 
     ### the external methods
 
@@ -378,6 +378,7 @@ class SeLoger(callbacks.Plugin):
 
     def _print(self,irc):
         if self._acquireLock('print', blocking=False):
+            self._update_db()
             for add in self.backend.get_new():
                 self._print_add(add,irc)
             time.sleep(0.1)
