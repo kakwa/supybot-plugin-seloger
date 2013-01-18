@@ -190,9 +190,12 @@ class SqliteSeLogerDB(object):
 
         """
         owner_id.lower() 
-        self._get_and_get_next('http://ws.seloger.com/search.xml?cp=' + cp + \
+        url = 'http://ws.seloger.com/search.xml?cp=' + cp + \
         '&idqfix=1&idtt=1&idtypebien=1,2&px_loyerbtw=NAN%2f' + max_price + \
-        '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1', owner_id)
+        '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1'
+
+        while url is not None:
+            url = self._get_and_get_next(url, owner_id)
 
     def _get_and_get_next(self, url, owner_id):
         """
@@ -221,7 +224,9 @@ class SqliteSeLogerDB(object):
             db.commit()
 
         if tree.xpath('//recherche/pageSuivante'):
-            self._get_and_get_next(tree.xpath('//recherche/pageSuivante')[0].text, owner_id)
+            return  tree.xpath('//recherche/pageSuivante')[0].text
+        else:
+            return None
 
 
 
