@@ -87,7 +87,7 @@ def dict_factory(cursor, row):
 class SqliteSeLogerDB(object):
 
 
-    def __init__(self, filename='db.seloger', log):
+    def __init__(self, log, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
         self.log=log
