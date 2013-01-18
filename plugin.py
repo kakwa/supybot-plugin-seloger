@@ -457,7 +457,7 @@ class SeLoger(callbacks.Plugin):
 
 Class = SeLoger
 
-db=SqliteSeLogerDB()
+#db=SqliteSeLogerDB()
 #db._getDb()
 #db.add_search('kakwa', '75014', '20', '800')
 #db.add_search('kakwaa', '75014', '20', '800')
@@ -465,7 +465,7 @@ db=SqliteSeLogerDB()
 #db.disable_search('1')
 #db.disable_search('2')
 
-db.do_searches()
+#db.do_searches()
 #print db.get_new()
 #print db.get_search('kakwa')
 
