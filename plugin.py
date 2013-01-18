@@ -87,9 +87,10 @@ def dict_factory(cursor, row):
 class SqliteSeLogerDB(object):
 
 
-    def __init__(self, filename='db.seloger'):
+    def __init__(self, filename='db.seloger'. log):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
+        self.log=log
 
 
     def close(self):
@@ -173,6 +174,7 @@ class SqliteSeLogerDB(object):
                           llPrecision TEXT,
                           UNIQUE (idAnnonce)ON CONFLICT IGNORE)""")
         db.commit()
+        self.log.info('database %s created',filename)
         return db
 
     def _get_annonce(self, idAnnonce):
@@ -195,9 +197,13 @@ class SqliteSeLogerDB(object):
         '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1'
 
         while url is not None:
-            url = self._get_and_get_next(url, owner_id)
+            try:
+                url = self._get(url, owner_id)
+            except:
+                self.log.warning('could not download %s',url)
+                url = None
 
-    def _get_and_get_next(self, url, owner_id):
+    def _get(self, url, owner_id):
         """
         function searching getting the xml pages (recursively) and putting
         the results inside the database
@@ -232,7 +238,6 @@ class SqliteSeLogerDB(object):
 
 
     def add_search(self, owner_id, cp, min_surf, max_price):
-    	print ">>>SELOGER: ADD SEARCH"
         owner_id.lower() 
         db = self._getDb()
         cursor = db.cursor()
@@ -241,10 +246,11 @@ class SqliteSeLogerDB(object):
 
         cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)", (search_id, owner_id, '1', cp, min_surf, max_price))
         db.commit()
+        self.log.info('adding new search')
         return search_id
 
     def do_searches(self):
-    	print ">>>SELOGER: DO SEARCH"
+        self.log.info('refresh database')
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -258,7 +264,7 @@ class SqliteSeLogerDB(object):
             #row = cursor.fetchone()
 
     def disable_search(self, search_id):
-    	print ">>>SELOGER: DISABLE SEARCH"
+        self.log.info('disabling search %s',search_id)
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -266,7 +272,7 @@ class SqliteSeLogerDB(object):
         db.commit()
 
     def get_search(self, owner_id):
-    	print ">>>SELOGER: GET_SEARCH"
+        self.log.info('printing searches of %s', owner_id)
         owner_id.lower() 
         db = self._getDb()
         db.row_factory = dict_factory
@@ -276,7 +282,7 @@ class SqliteSeLogerDB(object):
 
 
     def get_new(self):
-    	print ">>>SELOGER: GET_NEW"
+        self.log.info('printing new results to users')
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -309,7 +315,7 @@ class SeLoger(callbacks.Plugin):
     def __init__(self,irc):
         self.__parent = super(SeLoger, self)
         self.__parent.__init__(irc)
-        self.backend = SqliteSeLogerDB()
+        self.backend = SqliteSeLogerDB(self.log)
         self.gettingLockLock = threading.Lock()
         self.locks = {}
         #t = threading.Thread(None,self._update_db)
@@ -388,7 +394,6 @@ class SeLoger(callbacks.Plugin):
             self._releaseLock('print')
 
     def _print_add(self,add,irc):
-        print ">>>SELOGER: sending ADD"
         user = str(add['owner_id'])
         msg = ' '
         irc.reply(msg,to=user,private=True)
@@ -425,6 +430,8 @@ class SeLoger(callbacks.Plugin):
         irc.reply(msg,to=user,private=True)
         msg =  ' '
         irc.reply(msg,to=user,private=True)
+
+        self.log.info('printing add %s of %s ', add['idAnnonce'] ,owner_id)
  
         #self._priv_msg(user,msg,irc)
 
@@ -450,7 +457,7 @@ class SeLoger(callbacks.Plugin):
 
 Class = SeLoger
 
-#db=SqliteSeLogerDB()
+db=SqliteSeLogerDB()
 #db._getDb()
 #db.add_search('kakwa', '75014', '20', '800')
 #db.add_search('kakwaa', '75014', '20', '800')
@@ -458,7 +465,7 @@ Class = SeLoger
 #db.disable_search('1')
 #db.disable_search('2')
 
-#db.do_searches()
+db.do_searches()
 #print db.get_new()
 #print db.get_search('kakwa')
 
