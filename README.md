@@ -7,6 +7,8 @@ supybot plugin for seloger
 
 This supybot plugin searches and alerts you in query for any new adds one the french website "seloger.com".
 
+It's quite dirty but it works ;).
+
 ### License ###
 
 See the plugin files.
