@@ -78,6 +78,9 @@ val_xml = (
 )
 
 def dict_factory(cursor, row):
+    """just a small trick to get returns from the
+    searches inside the database as dictionnaries
+    """
     d = {}
     for idx,col in enumerate(cursor.description):
         d[col[0]] = row[idx]
@@ -85,6 +88,10 @@ def dict_factory(cursor, row):
 
 
 class SqliteSeLogerDB(object):
+    """This Class is the backend of the plugin,
+    it handles the database, its creation, its updates,
+    it also provides methods to get the add information
+    """
 
 
     def __init__(self, log, filename='db.seloger'):
@@ -94,10 +101,15 @@ class SqliteSeLogerDB(object):
 
 
     def close(self):
+        """function closing the database cleanly
+        """
         for db in self.dbs.itervalues():
             db.close()
 
     def _getDb(self):
+        """this function returns a database connexion, if the
+        database doesn't exist, it creates it.
+        """
         try:
             import sqlite3
         except ImportError:
@@ -178,6 +190,8 @@ class SqliteSeLogerDB(object):
         return db
 
     def _get_annonce(self, idAnnonce):
+        """backend function getting the information of one add 
+        """
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -223,12 +237,20 @@ class SqliteSeLogerDB(object):
                     values_list.append(u'Unknown')
                 else:
                     values_list.append(unicode(annonce.find(val).text))
+
+            #inserting the add information inside the table
             cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
             annonce_id = annonce.find('idAnnonce').text
+
+            #calcul of the uniq id for the mapping between the searcher and the add
             uniq_id = md5.new(owner_id + annonce_id).hexdigest()
-            cursor.execute("INSERT INTO map VALUES (?,?,?,?)", (uniq_id, annonce_id, '1', owner_id ))
+
+            #inserting the search inside
+            cursor.execute("INSERT INTO map VALUES (?,?,?,?)",\
+                    (uniq_id, annonce_id, '1', owner_id ))
             db.commit()
 
+        #if there is another page of search, we send return it, None otherwise
         if tree.xpath('//recherche/pageSuivante'):
             return  tree.xpath('//recherche/pageSuivante')[0].text
         else:
@@ -238,6 +260,8 @@ class SqliteSeLogerDB(object):
 
 
     def add_search(self, owner_id, cp, min_surf, max_price):
+        """this function adds a search inside the database
+        """
         owner_id.lower() 
         db = self._getDb()
         cursor = db.cursor()
@@ -246,11 +270,13 @@ class SqliteSeLogerDB(object):
 
         cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)", (search_id, owner_id, '1', cp, min_surf, max_price))
         db.commit()
-        self.log.info('adding new search')
+        self.log.info('%s adds a new search', owner_id)
         return search_id
 
     def do_searches(self):
-        self.log.info('refresh database')
+        """This function query SeLoger for new adds to put inside the database
+        """
+        self.log.info('refreshing database')
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -264,6 +290,8 @@ class SqliteSeLogerDB(object):
             #row = cursor.fetchone()
 
     def disable_search(self, search_id):
+        """ this function permits to disable a search
+        """
         self.log.info('disabling search %s',search_id)
         db = self._getDb()
         db.row_factory = dict_factory
@@ -272,7 +300,9 @@ class SqliteSeLogerDB(object):
         db.commit()
 
     def get_search(self, owner_id):
-        self.log.info('printing searches of %s', owner_id)
+        """ this function returns the search of a given user
+        """
+        self.log.info('printing search list of %s', owner_id)
         owner_id.lower() 
         db = self._getDb()
         db.row_factory = dict_factory
@@ -282,7 +312,10 @@ class SqliteSeLogerDB(object):
 
 
     def get_new(self):
-        self.log.info('printing new results to users')
+        """ this function returns the adds not already printed
+        and marks them as "printed".
+        """
+        self.log.info('printing new adds')
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
@@ -360,16 +393,22 @@ class SeLoger(callbacks.Plugin):
     ### The internal methods
 
     def __call__(self, irc, msg):
-#    def _reply_loop(self,irc):
+        """black magic...at least for me
+        """
         self.__parent.__call__(irc, msg)
         irc = callbacks.SimpleProxy(irc, msg)
         t = threading.Thread(None,self._print, None, (irc,))
         t.start()
 
     def _update_db(self):
+        """direct call to do_search from the backend class
+        it gets the new adds from SeLoger
+        """
         self.backend.do_searches()
 
     def _acquireLock(self, url, blocking=True):
+        """Lock handler for the threads
+        """
         try:
             self.gettingLockLock.acquire()
             try:
@@ -382,23 +421,28 @@ class SeLoger(callbacks.Plugin):
             self.gettingLockLock.release()
 
     def _releaseLock(self, url):
+        """Lock handler for the threads
+        """
         self.locks[url].release()
 
 
     def _print(self,irc):
+        """This function updates the database 
+        and prints any new results to each user
+        """
         if self._acquireLock('print', blocking=False):
             self._update_db()
             for add in self.backend.get_new():
                 self._print_add(add,irc)
-            time.sleep(0.1)
+            time.sleep(120)
             self._releaseLock('print')
 
     def _print_add(self,add,irc):
+        """this function prints one add
+        """
         user = str(add['owner_id'])
         msg = ' '
         irc.reply(msg,to=user,private=True)
-        #self._prir,msg,irc)
-        #self._prir,msg,irc)
 
         price = ircutils.mircColor('Prix: ' + add['prix'] + add['prixUnite'], 8)
         rooms  = ircutils.mircColor('Pieces: ' + add['nbPiece'],4) 
@@ -406,12 +450,11 @@ class SeLoger(callbacks.Plugin):
         msg = price + ' | ' + rooms + ' | ' + surface
         irc.reply(msg,to=user,private=True)
 
-        cp = ircutils.mircColor('Code postal: ' + add['cp'], 11) 
-        city = ircutils.mircColor('Ville: ' + add['ville'], 12)  
-        date = ircutils.mircColor('Date ajout: ' + add['dtCreation'], 2)
+        city = ircutils.mircColor('Ville: ' + add['ville'], 11)  
+        cp = ircutils.mircColor('Code postal: ' + add['cp'], 12) 
+        date = ircutils.mircColor('Date ajout: ' + add['dtCreation'], 11)
         msg = city + ' | ' + cp + ' | ' + date
         irc.reply(msg,to=user,private=True)
-        #self._prir,msg,irc)
 
         msg = ircutils.mircColor('Localisation: https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'],3)
         irc.reply(msg,to=user,private=True)
@@ -420,22 +463,21 @@ class SeLoger(callbacks.Plugin):
         msg = ircutils.mircColor('Proximite: ' + add['proximite'],2)
         irc.reply(msg,to=user,private=True)
 
-        #self._prir,msg,irc)
         msg = u'Description: ' + add['descriptif']
         msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
         irc.reply(msg,to=user,private=True)
 
-        #self._prir,msg,irc)
         msg = ircutils.mircColor('Lien: ' + add['permaLien'],9)
         irc.reply(msg,to=user,private=True)
         msg =  ' '
         irc.reply(msg,to=user,private=True)
 
-        self.log.info('printing add %s of %s ', add['idAnnonce'] ,owner_id)
+        self.log.debug('printing add %s of %s ', add['idAnnonce'], user)
  
-        #self._priv_msg(user,msg,irc)
 
     def _priv_msg(self,user,msg,irc):
+        """not the best way to do it...
+        """
         irc.queueMsg(ircmsgs.privmsg(user,msg))
 
  
