@@ -364,7 +364,7 @@ class SeLoger(callbacks.Plugin):
         user = irc.msg.nick 
         self._addSearch(str(user), str(pc), str(min_surf), str(max_price))
         msg='Done sladd'
-        self._priv_msg(user,msg,irc)
+        irc.reply(msg,to=user,private=True)
 
     sladd = wrap(sladd, ['int', 'int', 'int'])
 
@@ -376,7 +376,7 @@ class SeLoger(callbacks.Plugin):
         user = irc.msg.nick
         self._disableSearch(user, id_search)
         msg='Done sldisable'
-        self._priv_msg(user,msg,irc)
+        irc.reply(msg,to=user,private=True)
     sldisable = wrap(sldisable, ['text'])
 
  
@@ -387,7 +387,7 @@ class SeLoger(callbacks.Plugin):
         user = irc.msg.nick #plugins.getUserName(self.by)
         self._listSearch(user, irc)
         msg='Done sllist'
-        self._priv_msg(user,msg,irc)
+        irc.reply(msg,to=user,private=True)
 
     sllist = wrap(sllist)
 
@@ -481,13 +481,6 @@ class SeLoger(callbacks.Plugin):
 
         self.log.debug('printing add %s of %s ', add['idAnnonce'], user)
  
-
-    def _priv_msg(self,user,msg,irc):
-        """not the best way to do it...
-        """
-        irc.queueMsg(ircmsgs.privmsg(user,msg))
-
- 
     def _addSearch(self, user, pc, min_surf, max_price):
         """this function adds a search"""
         self.backend.add_search(user, pc, min_surf, max_price)
@@ -502,20 +495,13 @@ class SeLoger(callbacks.Plugin):
         """this function list the current searches"""
         searches = self.backend.get_search(user)
         for search in searches:
-            irc.reply("ID:'" + search['search_id'] + "' | 'Surface >= " + search['min_surf'] + "' | 'Loyer <= " + search['max_price'] + "' | 'cp == " + search['cp'] + "'")
+            id_search = ircutils.mircColor("ID: " + search['search_id'], 8)
+            surface = ircutils.mircColor("Surface >= " + search['min_surf'], 4)
+            loyer = ircutils.mircColor("Loyer <= " + search['max_price'], 13)
+            cp = ircutils.mircColor("cp == " + search['cp'], 11)
+            msg = id_search + " | " + surface + " | " + loyer + " | " + cp
+            irc.reply(msg,to=user,private=True)
 
 Class = SeLoger
-
-#db=SqliteSeLogerDB()
-#db._getDb()
-#db.add_search('kakwa', '75014', '20', '800')
-#db.add_search('kakwaa', '75014', '20', '800')
-#db.disable_search('0')
-#db.disable_search('1')
-#db.disable_search('2')
-
-#db.do_searches()
-#print db.get_new()
-#print db.get_search('kakwa')
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
