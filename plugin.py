@@ -43,6 +43,7 @@ import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
 import supybot.world as world
 import unicodedata
+import datetime
 #import supybot.dbi as dbi
 
 #the elements we get from the xml
@@ -289,14 +290,14 @@ class SqliteSeLogerDB(object):
             self._search_seloger(row['cp'],row['min_surf'],row['max_price'],row['owner_id'])
             #row = cursor.fetchone()
 
-    def disable_search(self, search_id):
+    def disable_search(self, search_id, owner_id):
         """ this function permits to disable a search
         """
         self.log.info('disabling search %s',search_id)
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("UPDATE searches SET flag_active = 0 WHERE search_id = (?)", (search_id, ))
+        cursor.execute("UPDATE searches SET flag_active = 0 WHERE search_id = (?) AND owner_id = (?)", (search_id, owner_id))
         db.commit()
 
     def get_search(self, owner_id):
@@ -307,7 +308,7 @@ class SqliteSeLogerDB(object):
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("""SELECT * FROM searches WHERE owner_id = (?)""", (owner_id, ))
+        cursor.execute("""SELECT * FROM searches WHERE owner_id = (?) AND flag_active = 1""", (owner_id, ))
         return cursor.fetchall()
 
 
@@ -376,7 +377,7 @@ class SeLoger(callbacks.Plugin):
         self._disableSearch(user, id_search)
         msg='Done sldisable'
         self._priv_msg(user,msg,irc)
-    sldisable = wrap(sldisable, ['int'])
+    sldisable = wrap(sldisable, ['text'])
 
  
     def sllist(self, irc, msg, args):
@@ -437,6 +438,12 @@ class SeLoger(callbacks.Plugin):
             time.sleep(120)
             self._releaseLock('print')
 
+    def _reformat_date(self, date):
+        """small function reformatting a date
+        """
+        d = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
+        return  d.strftime('%d/%m/%Y %H:%M')
+
     def _print_add(self,add,irc):
         """this function prints one add
         """
@@ -452,7 +459,7 @@ class SeLoger(callbacks.Plugin):
 
         city = ircutils.mircColor('Ville: ' + add['ville'], 11)  
         cp = ircutils.mircColor('Code postal: ' + add['cp'], 12) 
-        date = ircutils.mircColor('Date ajout: ' + add['dtCreation'], 11)
+        date = ircutils.mircColor('Date ajout: ' + self._reformat_date(add['dtCreation']), 11)
         msg = city + ' | ' + cp + ' | ' + date
         irc.reply(msg,to=user,private=True)
 
@@ -488,7 +495,7 @@ class SeLoger(callbacks.Plugin):
     
     def _disableSearch(self, user, id_search):
         """this function disables a search"""
-        self.backend.disable_search(id_search)
+        self.backend.disable_search(id_search,user)
 
 
     def _listSearch(self, user, irc):
