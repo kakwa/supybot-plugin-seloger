@@ -122,16 +122,21 @@ class SqliteSeLogerDB(object):
         if filename in self.dbs:
             return self.dbs[filename]
         if os.path.exists(filename):
-            self.dbs[filename] = sqlite3.connect(filename, check_same_thread = False)
+            self.dbs[filename] = sqlite3.connect(
+                filename, check_same_thread = False
+                )
+
             return self.dbs[filename]
         db = sqlite3.connect(filename, check_same_thread = False)
         self.dbs[filename] = db
         cursor = db.cursor()
 
-        #initialisation of the searches table (contains the searches entered by each user) 
+        #initialisation of the searches table 
+        #(contains the searches entered by each user) 
         #search_id: the id of the search 
         #owner_id: the id of the user who entered the search
-        #flag_active: a flag set to 1 when the search is active, 0 when it's not (not in use)
+        #flag_active: a flag set to 1 when the search is active, 
+        #             0 when it's not (not in use)
         #cp: the postal code
         #min_surf: minimum surface of the annonce
         #max_price: maximum rent
@@ -147,7 +152,8 @@ class SqliteSeLogerDB(object):
         #mapping between a search result and a user (n to n mapping)
         #idAnnonce: the id of on annonce
         #owner_id: the id of an owner
-        #flag_shown: a flag set to 0 when the annonce was already presented to owner_id, 0 if not
+        #flag_shown: a flag set to 0 when the annonce was already 
+        #           presented to owner_id, 0 if not
         cursor.execute("""CREATE TABLE map (
                           uniq_id TEXT PRIMARY KEY,
                           idAnnonce TEXT,
@@ -196,7 +202,10 @@ class SqliteSeLogerDB(object):
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("""SELECT * FROM results WHERE idAnnonce = (?)""", (idAnnonce, ))
+        cursor.execute(
+            """SELECT * FROM results WHERE idAnnonce = (?)""",
+            (idAnnonce, )
+            )
         return cursor.fetchone()
 
     def _search_seloger(self, cp, min_surf, max_price, owner_id):
@@ -241,9 +250,11 @@ class SqliteSeLogerDB(object):
 
             #inserting the add information inside the table
             cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
+
             annonce_id = annonce.find('idAnnonce').text
 
-            #calcul of the uniq id for the mapping between the searcher and the add
+            #calcul of the uniq id for the mapping between 
+            #the searcher and the add
             uniq_id = md5.new(owner_id + annonce_id).hexdigest()
 
             #inserting the search inside
@@ -269,9 +280,13 @@ class SqliteSeLogerDB(object):
 
         search_id = md5.new(owner_id + cp + min_surf + max_price).hexdigest()
 
-        cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)", (search_id, owner_id, '1', cp, min_surf, max_price))
+        cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)",
+            (search_id, owner_id, '1', cp, min_surf, max_price)
+            )
+
         db.commit()
-        self.log.info('%s adds a new search', owner_id)
+
+        self.log.info('%s has added a new search', owner_id)
         return search_id
 
     def do_searches(self):
@@ -283,12 +298,10 @@ class SqliteSeLogerDB(object):
         cursor = db.cursor()
         cursor.execute("SELECT * FROM searches WHERE flag_active = 1")
 
-        #row = cursor.fetchone()
-        #while row is not None:
         for row in cursor.fetchall():
-            #print row
-            self._search_seloger(row['cp'],row['min_surf'],row['max_price'],row['owner_id'])
-            #row = cursor.fetchone()
+            self._search_seloger(
+                row['cp'],row['min_surf'],row['max_price'],row['owner_id']
+                )
 
     def disable_search(self, search_id, owner_id):
         """ this function permits to disable a search
@@ -297,7 +310,10 @@ class SqliteSeLogerDB(object):
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("DELETE FROM searches WHERE search_id = (?) AND owner_id = (?)", (search_id, owner_id))
+        cursor.execute(
+            "DELETE FROM searches WHERE search_id = (?) AND owner_id = (?)",
+            (search_id, owner_id)
+            )
         db.commit()
 
     def get_search(self, owner_id):
@@ -308,7 +324,11 @@ class SqliteSeLogerDB(object):
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("""SELECT * FROM searches WHERE owner_id = (?) AND flag_active = 1""", (owner_id, ))
+        cursor.execute(
+            """SELECT * FROM searches WHERE owner_id = (?) AND flag_active = 1""",
+            (owner_id, )
+            )
+
         return cursor.fetchall()
 
 
@@ -322,17 +342,16 @@ class SqliteSeLogerDB(object):
         cursor = db.cursor()
         cursor.execute("SELECT * FROM map WHERE flag_shown = 1")
 
-        #row = cursor.fetchone()
-        #while row is not None:
         return_annonces=[]
         for row in cursor.fetchall():
             uniq = row['uniq_id']
-            cursor.execute("""UPDATE map SET flag_shown = 0 WHERE uniq_id = (?)""", (uniq, ))
+            cursor.execute(
+                """UPDATE map SET flag_shown = 0 WHERE uniq_id = (?)""",
+                (uniq, )
+                )
             result = self._get_annonce(row['idAnnonce'])
             result['owner_id'] = row['owner_id']
             return_annonces.append(result)
-
-            #row = cursor.fetchone()
 
         db.commit()
         return return_annonces
@@ -352,8 +371,6 @@ class SeLoger(callbacks.Plugin):
         self.backend = SqliteSeLogerDB(self.log)
         self.gettingLockLock = threading.Lock()
         self.locks = {}
-        #t = threading.Thread(None,self._update_db)
-        #t.start()
 
     ### the external methods
 
@@ -384,7 +401,7 @@ class SeLoger(callbacks.Plugin):
         """list
         list all your searches
         """
-        user = irc.msg.nick #plugins.getUserName(self.by)
+        user = irc.msg.nick 
         self._listSearch(user, irc)
         msg='Done sllist'
         irc.reply(msg,to=user,private=True)
@@ -439,7 +456,7 @@ class SeLoger(callbacks.Plugin):
             self._releaseLock('print')
 
     def _reformat_date(self, date):
-        """small function reformatting a date
+        """small function reformatting the date format from SeLoger
         """
         d = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
         return  d.strftime('%d/%m/%Y %H:%M')
@@ -453,17 +470,29 @@ class SeLoger(callbacks.Plugin):
 
         price = ircutils.mircColor('Prix: ' + add['prix'] + add['prixUnite'], 8)
         rooms  = ircutils.mircColor('Pieces: ' + add['nbPiece'],4) 
-        surface =  ircutils.mircColor('Surface: ' + add['surface'] + add['surfaceUnite'],13)
+        surface =  ircutils.mircColor(
+                        'Surface: ' + add['surface'] + add['surfaceUnite'],
+                        13
+                        )
+
         msg = price + ' | ' + rooms + ' | ' + surface
         irc.reply(msg,to=user,private=True)
 
         city = ircutils.mircColor('Ville: ' + add['ville'], 11)  
         cp = ircutils.mircColor('Code postal: ' + add['cp'], 12) 
-        date = ircutils.mircColor('Date ajout: ' + self._reformat_date(add['dtCreation']), 11)
+        date = ircutils.mircColor(
+                   'Date ajout: ' + self._reformat_date(add['dtCreation']), 
+                   11
+                   )
+
         msg = city + ' | ' + cp + ' | ' + date
         irc.reply(msg,to=user,private=True)
 
-        msg = ircutils.mircColor('Localisation: https://maps.google.com/maps?q=' + add['latitude'] + '+' + add['longitude'],3)
+        msg = ircutils.mircColor(
+                    'Localisation: https://maps.google.com/maps?q=' \
+                            + add['latitude'] + '+' + add['longitude'], 
+                    3
+                    )
         irc.reply(msg,to=user,private=True)
 
 
