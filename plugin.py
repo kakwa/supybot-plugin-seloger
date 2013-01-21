@@ -89,7 +89,7 @@ class SqliteSeLogerDB(object):
         self.val_xml_count = len(self.val_xml)
         self.primary_key = 'idAnnonce'
 
-    def _dict_factory(cursor, row):
+    def _dict_factory(self, cursor, row):
         """just a small trick to get returns from the
         searches inside the database as dictionnaries
         """
