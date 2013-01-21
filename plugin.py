@@ -45,18 +45,8 @@ import supybot.world as world
 import unicodedata
 import datetime
 import itertools
-#import supybot.dbi as dbi
 
 
-
-def dict_factory(cursor, row):
-    """just a small trick to get returns from the
-    searches inside the database as dictionnaries
-    """
-    d = {}
-    for idx,col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
 
 
 class SqliteSeLogerDB(object):
@@ -103,6 +93,16 @@ class SqliteSeLogerDB(object):
         )
  
         self.val_xml_count = len(self.val_xml)
+        self.primary_key = 'idAnnonce'
+
+    def _dict_factory(cursor, row):
+        """just a small trick to get returns from the
+        searches inside the database as dictionnaries
+        """
+        d = {}
+        for idx,col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
 
 
@@ -153,7 +153,8 @@ class SqliteSeLogerDB(object):
                           cp TEXT,
                           min_surf TEXT,
                           max_price TEXT,
-                          UNIQUE (search_id) ON CONFLICT IGNORE)""")
+                          UNIQUE (search_id) ON CONFLICT IGNORE)"""
+                      )
 
         #mapping between a search result and a user (n to n mapping)
         #idAnnonce: the id of on annonce
@@ -165,39 +166,23 @@ class SqliteSeLogerDB(object):
                           idAnnonce TEXT,
                           flag_shown INT,
                           owner_id TEXT,
-                          UNIQUE (uniq_id) ON CONFLICT IGNORE)""")
+                          UNIQUE (uniq_id) ON CONFLICT IGNORE)"""
+                      )
+        
+        #generate the string of table fields from self.val_xml
+        table_results = ''
+        for val in self.val_xml:
+            if val == self.primary_key:
+                table_results = table_results + val \
+                                + ' TEXT PRIMARY KEY, '
+            else:
+                table_results = table_results + val \
+                                + ' TEXT, '
 
         #the table containing the information of an annonce
         cursor.execute("""CREATE TABLE results (
-                          idTiers TEXT,
-                          idAnnonce TEXT PRIMARY KEY,
-                          idPublication TEXT,
-                          idTypeTransaction TEXT,
-                          idTypeBien TEXT,
-                          dtFraicheur TEXT,
-                          dtCreation TEXT,
-                          titre TEXT,
-                          libelle TEXT,
-                          proximite TEXT,
-                          descriptif TEXT,
-                          prix TEXT,
-                          prixUnite TEXT,
-                          prixMention TEXT,
-                          nbPiece TEXT,
-                          nbChambre TEXT,
-                          surface TEXT,
-                          surfaceUnite TEXT,
-                          idPays TEXT,
-                          pays TEXT,
-                          cp TEXT,
-                          ville TEXT,
-                          nbPhotos TEXT,
-                          firstThumb TEXT,
-                          permaLien TEXT,
-                          latitude TEXT,
-                          longitude TEXT,
-                          llPrecision TEXT,
-                          UNIQUE (idAnnonce)ON CONFLICT IGNORE)""")
+                          %s
+                          UNIQUE (idAnnonce)ON CONFLICT IGNORE)""" % table_results )
         db.commit()
         self.log.info('database %s created',filename)
         return db
@@ -206,7 +191,7 @@ class SqliteSeLogerDB(object):
         """backend function getting the information of one add 
         """
         db = self._getDb()
-        db.row_factory = dict_factory
+        db.row_factory = self._dict_factory
         cursor = db.cursor()
         cursor.execute(
             """SELECT * FROM results WHERE idAnnonce = (?)""",
@@ -307,7 +292,7 @@ class SqliteSeLogerDB(object):
         """
         self.log.info('refreshing database')
         db = self._getDb()
-        db.row_factory = dict_factory
+        db.row_factory = self._dict_factory
         cursor = db.cursor()
         cursor.execute("SELECT * FROM searches WHERE flag_active = 1")
 
@@ -321,7 +306,7 @@ class SqliteSeLogerDB(object):
         """
         self.log.info('disabling search %s',search_id)
         db = self._getDb()
-        db.row_factory = dict_factory
+        db.row_factory = self._dict_factory
         cursor = db.cursor()
         cursor.execute(
             "DELETE FROM searches WHERE search_id = (?) AND owner_id = (?)",
@@ -335,7 +320,7 @@ class SqliteSeLogerDB(object):
         self.log.info('printing search list of %s', owner_id)
         owner_id.lower() 
         db = self._getDb()
-        db.row_factory = dict_factory
+        db.row_factory = self._dict_factory
         cursor = db.cursor()
         cursor.execute(
             """SELECT * FROM searches WHERE owner_id = (?) AND flag_active = 1""",
@@ -351,7 +336,7 @@ class SqliteSeLogerDB(object):
         """
         self.log.info('printing new adds')
         db = self._getDb()
-        db.row_factory = dict_factory
+        db.row_factory = self._dict_factory
         cursor = db.cursor()
         cursor.execute("SELECT * FROM map WHERE flag_shown = 1")
 
