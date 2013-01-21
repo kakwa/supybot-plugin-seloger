@@ -15,6 +15,8 @@ See the plugin files.
 
 ### Screenshot ###
 
+Here is the result inside irssi:
+
 <img src="https://raw.github.com/kakwa/supybot-plugin-seloger/master/screenshot/seloger-screenshot.jpg"/>
 
 ### Dependancies ###
