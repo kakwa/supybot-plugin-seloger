@@ -35,6 +35,7 @@ import md5
 import unicodedata
 import datetime
 import itertools
+import re
 import supybot.utils as utils
 import supybot.ircdb as ircdb
 from supybot.commands import *
@@ -396,7 +397,7 @@ class SeLoger(callbacks.Plugin):
 
     def sladd(self, irc, msg, args, pc, min_surf, max_price):
         """add <postal code> <min surface> <max price>
-        Adds a new search for you
+        Adds a new search for you ( /!\ many messages in the first batch )
         """
         user = irc.msg.nick 
         self._addSearch(str(user), str(pc), str(min_surf), str(max_price))
@@ -525,7 +526,10 @@ class SeLoger(callbacks.Plugin):
 
         #print the description
         msg = u'Description: ' + add['descriptif']
-        msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
+        #description encoding is messy, we just convert it in ascii
+        #and suppress some \n
+        #msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
+        msg = re.sub(r'\n', r'', msg)
         irc.reply(msg,to=user,private=True)
 
         #printing the permanent link of the add
