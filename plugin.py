@@ -25,7 +25,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
 ###
 
 import os
@@ -33,7 +32,9 @@ import time
 from lxml import etree
 import threading
 import md5
-
+import unicodedata
+import datetime
+import itertools
 import supybot.utils as utils
 import supybot.ircdb as ircdb
 from supybot.commands import *
@@ -42,12 +43,6 @@ import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 import supybot.ircmsgs as ircmsgs
 import supybot.world as world
-import unicodedata
-import datetime
-import itertools
-
-
-
 
 class SqliteSeLogerDB(object):
     """This Class is the backend of the plugin,
@@ -56,7 +51,6 @@ class SqliteSeLogerDB(object):
     """
 
     #the elements we get from the xml
-
     def __init__(self, log, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
@@ -103,9 +97,6 @@ class SqliteSeLogerDB(object):
         for idx,col in enumerate(cursor.description):
             d[col[0]] = row[idx]
         return d
-
-
-
 
     def close(self):
         """function closing the database cleanly
@@ -266,9 +257,6 @@ class SqliteSeLogerDB(object):
         else:
             return None
 
-
-
-
     def add_search(self, owner_id, cp, min_surf, max_price):
         """this function adds a search inside the database
         """
@@ -329,7 +317,6 @@ class SqliteSeLogerDB(object):
 
         return cursor.fetchall()
 
-
     def get_new(self):
         """ this function returns the adds not already printed
         and marks them as "printed".
@@ -353,7 +340,6 @@ class SqliteSeLogerDB(object):
 
         db.commit()
         return return_annonces
-
 
 class SeLoger(callbacks.Plugin):
     """This plugin search and alerts you in query if 
@@ -383,7 +369,6 @@ class SeLoger(callbacks.Plugin):
 
     sladd = wrap(sladd, ['int', 'int', 'int'])
 
-        
     def sldisable(self, irc, msg, args, id_search):
         """disable <id_search>
         Disables a search
@@ -394,7 +379,6 @@ class SeLoger(callbacks.Plugin):
         irc.reply(msg,to=user,private=True)
     sldisable = wrap(sldisable, ['text'])
 
- 
     def sllist(self, irc, msg, args):
         """list
         list all your searches
@@ -440,7 +424,6 @@ class SeLoger(callbacks.Plugin):
         """Lock handler for the threads
         """
         self.locks[url].release()
-
 
     def _print(self,irc):
         """This function updates the database 
@@ -512,11 +495,9 @@ class SeLoger(callbacks.Plugin):
         """this function adds a search"""
         self.backend.add_search(user, pc, min_surf, max_price)
 
-    
     def _disableSearch(self, user, id_search):
         """this function disables a search"""
         self.backend.disable_search(id_search,user)
-
 
     def _listSearch(self, user, irc):
         """this function list the current searches"""
