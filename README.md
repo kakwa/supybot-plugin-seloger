@@ -13,6 +13,11 @@ It's quite dirty but it works ;).
 
 See the plugin files.
 
+### Screenshot ###
+
+<img src="https://raw.github.com/kakwa/supybot-plugin-seloger/master/screenshot/seloger-screenshot.jpg" height="200" />
+
+
 ### Dependancies ###
 
 This plugin relies on:
