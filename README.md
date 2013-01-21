@@ -3,35 +3,36 @@ supybot-plugin-seloger
 
 supybot plugin for seloger
 
-### Description ###
+## Description ##
 
-This supybot plugin searches and alerts you in query for any new adds one the french website "seloger.com".
+This supybot plugin searches and alerts you in query for any new adds on 
+the french website "www.seloger.com".
 
-It's quite dirty but it works ;).
-
-### License ###
+## License ##
 
 See the plugin files.
 
-### Screenshot ###
+## Screenshot ##
 
 Here is the result inside irssi:
 
 <img src="https://raw.github.com/kakwa/supybot-plugin-seloger/master/screenshot/seloger-screenshot.jpg"/>
 
-### Dependancies ###
+## Dependancies ##
 
 This plugin relies on:
 
-* supybot (...)
+* supybot
 * lxml
 * sqlite3
 * python2
 
-### Commands ###
+## Commands ##
+
+Here is the commands list: 
 
 * ```sladd <postal code> <min surface> <max price>```: add a new search for you
 * ```sllist```: list your active searches
-* ```sldisable <search ID>```: disable the given search
+* ```sldisable <search ID>```: remove the given search
 
-The bot replies and send new adds in query.
+This plugin replies you and sends you new adds in query.
