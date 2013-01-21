@@ -47,14 +47,14 @@ import supybot.world as world
 class SqliteSeLogerDB(object):
     """This Class is the backend of the plugin,
     it handles the database, its creation, its updates,
-    it also provides methods to get the add information
+    it also provides methods to get the adds information
     """
 
-    #the elements we get from the xml
     def __init__(self, log, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
         self.log=log
+        #the elements we get from the xml
         self.val_xml = (
             'idTiers', 
             'idAnnonce',
@@ -84,9 +84,9 @@ class SqliteSeLogerDB(object):
             'latitude',
             'longitude',
             'llPrecision'
-        )
- 
+        ) 
         self.val_xml_count = len(self.val_xml)
+        #the primary key of the results table
         self.primary_key = 'idAnnonce'
 
     def _dict_factory(self, cursor, row):
@@ -107,13 +107,13 @@ class SqliteSeLogerDB(object):
     def _getDb(self):
         """this function returns a database connexion, if the
         database doesn't exist, it creates it.
+        no argument.
         """
         try:
             import sqlite3
         except ImportError:
-            raise callbacks.Error, 'You need to have PySQLite installed to ' \
-                                   'use Poll.  Download it at ' \
-                                   '<http://pysqlite.org/>'
+            raise callbacks.Error, 'You need to have sqlite3 installed to ' \
+                                   'use SeLoger.'
         filename = 'db.seloger'
 
         if filename in self.dbs:
@@ -159,8 +159,9 @@ class SqliteSeLogerDB(object):
                           owner_id TEXT,
                           UNIQUE (uniq_id) ON CONFLICT IGNORE)"""
                       )
-        
-        #generate the string of table fields from self.val_xml
+
+        #generation of the results table (contains the adds info)
+        #first: generate the string of fields from self.val_xml
         table_results = ''
         for val in self.val_xml:
             if val == self.primary_key:
@@ -170,16 +171,20 @@ class SqliteSeLogerDB(object):
                 table_results = table_results + val \
                                 + ' TEXT, '
 
-        #the table containing the information of an annonce
+        #finally: creation of the table
         cursor.execute("""CREATE TABLE results (
                           %s
-                          UNIQUE (idAnnonce)ON CONFLICT IGNORE)""" % table_results )
+                          UNIQUE (idAnnonce)ON CONFLICT IGNORE)""" % 
+                          table_results 
+                      )
+
         db.commit()
         self.log.info('database %s created',filename)
         return db
 
     def _get_annonce(self, idAnnonce):
         """backend function getting the information of one add 
+           arg 1: the add unique ID ('idAnnonce') 
         """
         db = self._getDb()
         db.row_factory = self._dict_factory
@@ -191,25 +196,30 @@ class SqliteSeLogerDB(object):
         return cursor.fetchone()
 
     def _search_seloger(self, cp, min_surf, max_price, owner_id):
-        """entry function for a search
-        cp: the postal code
-        min_surface: the minimal surface
-        max_price: the maximum rent
+        """entry function for getting the adds on seloger.com
+        arg 1: the postal code
+        arg 2: the minimal surface
+        arg 3: the maximum rent
+        arg 4: the owner_id of the search (the user making the search)
 
         """
         owner_id.lower() 
+        #the first url for the search
         url = 'http://ws.seloger.com/search.xml?cp=' + cp + \
         '&idqfix=1&idtt=1&idtypebien=1,2&px_loyerbtw=NAN%2f' + max_price + \
         '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1'
 
+        #we search all the pages 
+        #(the current page gives the next if it exists)
         while url is not None:
                 url = self._get(url, owner_id)
 
     def _get(self, url, owner_id):
         """
-        function searching getting the xml pages (recursively) and putting
+        function getting the xml pages  and putting
         the results inside the database
-        url: the url giving the nice xml
+        arg 1: the url giving the nice xml
+        arg 2: the owner_id of the search
         """
         owner_id.lower() 
         db = self._getDb()
@@ -219,15 +229,19 @@ class SqliteSeLogerDB(object):
         try:
             tree = etree.parse(url)
         except:
+            #if we have some troubles loading the page
             self.log.warning('could not download %s',url)
             return None
-
+        
+        #we get the info from the xml
         root = tree.getroot()
         annonces = root.find('annonces')
 
         for annonce in annonces:
             values_list=[]
             for val in self.val_xml:
+                #if the value exists we put it in the db
+                #if it doesn't we put "Unknown"
                 if annonce.find(val) is None or annonce.find(val).text is None:
                     values_list.append(u'Unknown')
                 else:
@@ -236,7 +250,7 @@ class SqliteSeLogerDB(object):
             #inserting the add information inside the table
             cursor.execute(
                     "INSERT INTO results VALUES (" + \
-                        ','.join(itertools.repeat('?', self.val_xml_count)) + ")", 
+                    ','.join(itertools.repeat('?', self.val_xml_count)) + ")",
                     tuple(values_list)
                     )
 
@@ -246,12 +260,12 @@ class SqliteSeLogerDB(object):
             #the searcher and the add
             uniq_id = md5.new(owner_id + annonce_id).hexdigest()
 
-            #inserting the search inside
+            #inserting the new add inside map
             cursor.execute("INSERT INTO map VALUES (?,?,?,?)",\
                     (uniq_id, annonce_id, '1', owner_id ))
             db.commit()
 
-        #if there is another page of search, we send return it, None otherwise
+        #if there is another page, we return it, we return None otherwise
         if tree.xpath('//recherche/pageSuivante'):
             return  tree.xpath('//recherche/pageSuivante')[0].text
         else:
@@ -259,13 +273,19 @@ class SqliteSeLogerDB(object):
 
     def add_search(self, owner_id, cp, min_surf, max_price):
         """this function adds a search inside the database
+        arg 1: te owner_id of the new search
+        arg 2: the postal code of the new search
+        arg 3: the minimal surface
+        arg 4: the maximum price
         """
         owner_id.lower() 
         db = self._getDb()
         cursor = db.cursor()
-
+        
+        #calcul of a unique ID
         search_id = md5.new(owner_id + cp + min_surf + max_price).hexdigest()
 
+        #insertion of the new search parameters
         cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)",
             (search_id, owner_id, '1', cp, min_surf, max_price)
             )
@@ -276,65 +296,81 @@ class SqliteSeLogerDB(object):
         return search_id
 
     def do_searches(self):
-        """This function query SeLoger for new adds to put inside the database
+        """This function plays the searches of every user,
+        and puts the infos inside the database.
+        no argument
         """
         self.log.info('refreshing database')
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
+        #we select all the active searches
         cursor.execute("SELECT * FROM searches WHERE flag_active = 1")
 
+        #for each searches we query seloger.com
         for row in cursor.fetchall():
             self._search_seloger(
                 row['cp'],row['min_surf'],row['max_price'],row['owner_id']
                 )
 
     def disable_search(self, search_id, owner_id):
-        """ this function permits to disable a search
+        """ this function disable a search
+        arg 1: the unique id of the search
+        agr 2: the owner_id of the search
         """
         self.log.info('disabling search %s',search_id)
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
+        #we delete the given search of the given user
         cursor.execute(
             "DELETE FROM searches WHERE search_id = (?) AND owner_id = (?)",
             (search_id, owner_id)
             )
         db.commit()
+        self.log.info('%s has deleted search %s', owner_id, search_id)
 
     def get_search(self, owner_id):
         """ this function returns the search of a given user
+        arg 1: the owner_id
         """
         self.log.info('printing search list of %s', owner_id)
         owner_id.lower() 
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
+        #we get all the searches of the given user
         cursor.execute(
-            """SELECT * FROM searches WHERE owner_id = (?) AND flag_active = 1""",
+            "SELECT * FROM searches WHERE owner_id = (?) AND flag_active = 1",
             (owner_id, )
             )
+        self.log.info('%s has queried his searches', owner_id)
 
         return cursor.fetchall()
 
     def get_new(self):
         """ this function returns the adds not already printed
         and marks them as "printed".
+        no argument
         """
         self.log.info('printing new adds')
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
+        #we get all the new adds
         cursor.execute("SELECT * FROM map WHERE flag_shown = 1")
 
         return_annonces=[]
         for row in cursor.fetchall():
             uniq = row['uniq_id']
+            #we mark the add as "read"
             cursor.execute(
                 """UPDATE map SET flag_shown = 0 WHERE uniq_id = (?)""",
                 (uniq, )
                 )
+            #we get the infos of the add
             result = self._get_annonce(row['idAnnonce'])
+            #we add in the result the name of the owner
             result['owner_id'] = row['owner_id']
             return_annonces.append(result)
 
@@ -343,7 +379,7 @@ class SqliteSeLogerDB(object):
 
 class SeLoger(callbacks.Plugin):
     """This plugin search and alerts you in query if 
-    new ads are available.
+    new adds are available.
     Use "sladd" for a new search.
     Use "sllist" to list you current search.
     Use "sldisable" to remove an old search."""
@@ -377,6 +413,7 @@ class SeLoger(callbacks.Plugin):
         self._disableSearch(user, id_search)
         msg='Done sldisable'
         irc.reply(msg,to=user,private=True)
+
     sldisable = wrap(sldisable, ['text'])
 
     def sllist(self, irc, msg, args):
@@ -393,7 +430,7 @@ class SeLoger(callbacks.Plugin):
     ### The internal methods
 
     def __call__(self, irc, msg):
-        """black magic...at least for me
+        """black supybot magic... at least for me
         """
         self.__parent.__call__(irc, msg)
         irc = callbacks.SimpleProxy(irc, msg)
@@ -437,7 +474,7 @@ class SeLoger(callbacks.Plugin):
             self._releaseLock('print')
 
     def _reformat_date(self, date):
-        """small function reformatting the date format from SeLoger
+        """small function reformatting the date from SeLoger
         """
         d = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
         return  d.strftime('%d/%m/%Y %H:%M')
@@ -445,11 +482,15 @@ class SeLoger(callbacks.Plugin):
     def _print_add(self,add,irc):
         """this function prints one add
         """
+        #user needs to be an ascii string, not unicode
         user = str(add['owner_id'])
+
+        #empty line for lisibility
         msg = ' '
         irc.reply(msg,to=user,private=True)
 
-        price = ircutils.mircColor('Prix: ' + add['prix'] + add['prixUnite'], 8)
+        #printing the pric, number of rooms and surface
+        price = ircutils.mircColor('Prix: ' + add['prix'] + add['prixUnite'],8)
         rooms  = ircutils.mircColor('Pieces: ' + add['nbPiece'],4) 
         surface =  ircutils.mircColor(
                         'Surface: ' + add['surface'] + add['surfaceUnite'],
@@ -459,6 +500,7 @@ class SeLoger(callbacks.Plugin):
         msg = price + ' | ' + rooms + ' | ' + surface
         irc.reply(msg,to=user,private=True)
 
+        #printing the city, the postal code and date of the add
         city = ircutils.mircColor('Ville: ' + add['ville'], 11)  
         cp = ircutils.mircColor('Code postal: ' + add['cp'], 12) 
         date = ircutils.mircColor(
@@ -469,6 +511,7 @@ class SeLoger(callbacks.Plugin):
         msg = city + ' | ' + cp + ' | ' + date
         irc.reply(msg,to=user,private=True)
 
+        #printing a googlemaps url to see where it is (data not accurate)
         msg = ircutils.mircColor(
                     'Localisation: https://maps.google.com/maps?q=' \
                             + add['latitude'] + '+' + add['longitude'], 
@@ -476,16 +519,20 @@ class SeLoger(callbacks.Plugin):
                     )
         irc.reply(msg,to=user,private=True)
 
-
+        #printing "Proximite" info
         msg = ircutils.mircColor('Proximite: ' + add['proximite'],2)
         irc.reply(msg,to=user,private=True)
 
+        #print the description
         msg = u'Description: ' + add['descriptif']
         msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
         irc.reply(msg,to=user,private=True)
 
+        #printing the permanent link of the add
         msg = ircutils.mircColor('Lien: ' + add['permaLien'],9)
         irc.reply(msg,to=user,private=True)
+
+        #one more time, an empty line for lisibility
         msg =  ' '
         irc.reply(msg,to=user,private=True)
 
@@ -500,7 +547,7 @@ class SeLoger(callbacks.Plugin):
         self.backend.disable_search(id_search,user)
 
     def _listSearch(self, user, irc):
-        """this function list the current searches"""
+        """this function list the current searches of a user"""
         searches = self.backend.get_search(user)
         for search in searches:
             id_search = ircutils.mircColor("ID: " + search['search_id'], 8)
