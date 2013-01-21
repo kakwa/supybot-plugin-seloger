@@ -529,7 +529,7 @@ class SeLoger(callbacks.Plugin):
         #description encoding is messy, we just convert it in ascii
         #and suppress some \n
         #msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
-        msg = re.sub(r'\n', r'', msg)
+        msg = re.sub(r'\n', r' ', msg)
         irc.reply(msg,to=user,private=True)
 
         #printing the permanent link of the add
