@@ -297,7 +297,7 @@ class SqliteSeLogerDB(object):
         db = self._getDb()
         db.row_factory = dict_factory
         cursor = db.cursor()
-        cursor.execute("UPDATE searches SET flag_active = 0 WHERE search_id = (?) AND owner_id = (?)", (search_id, owner_id))
+        cursor.execute("DELETE FROM searches WHERE search_id = (?) AND owner_id = (?)", (search_id, owner_id))
         db.commit()
 
     def get_search(self, owner_id):
