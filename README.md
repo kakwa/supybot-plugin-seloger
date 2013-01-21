@@ -15,8 +15,7 @@ See the plugin files.
 
 ### Screenshot ###
 
-<img src="https://raw.github.com/kakwa/supybot-plugin-seloger/master/screenshot/seloger-screenshot.jpg" height="200" />
-
+<img src="https://raw.github.com/kakwa/supybot-plugin-seloger/master/screenshot/seloger-screenshot.jpg" height="400" />
 
 ### Dependancies ###
 
