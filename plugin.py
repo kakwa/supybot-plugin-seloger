@@ -44,39 +44,10 @@ import supybot.ircmsgs as ircmsgs
 import supybot.world as world
 import unicodedata
 import datetime
+import itertools
 #import supybot.dbi as dbi
 
-#the elements we get from the xml
-val_xml = ( 
-'idTiers', 
-'idAnnonce',
-'idPublication', 
-'idTypeTransaction', 
-'idTypeBien',
-'dtFraicheur', 
-'dtCreation', 
-'titre', 
-'libelle', 
-'proximite', 
-'descriptif', 
-'prix',
-'prixUnite', 
-'prixMention', 
-'nbPiece', 
-'nbChambre', 
-'surface', 
-'surfaceUnite', 
-'idPays', 
-'pays', 
-'cp', 
-'ville', 
-'nbPhotos',
-'firstThumb',
-'permaLien',
-'latitude',
-'longitude',
-'llPrecision'
-)
+
 
 def dict_factory(cursor, row):
     """just a small trick to get returns from the
@@ -94,11 +65,46 @@ class SqliteSeLogerDB(object):
     it also provides methods to get the add information
     """
 
+    #the elements we get from the xml
 
     def __init__(self, log, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
         self.log=log
+        self.val_xml = (
+            'idTiers', 
+            'idAnnonce',
+            'idPublication', 
+            'idTypeTransaction', 
+            'idTypeBien',
+            'dtFraicheur', 
+            'dtCreation', 
+            'titre', 
+            'libelle', 
+            'proximite', 
+            'descriptif', 
+            'prix',
+            'prixUnite', 
+            'prixMention', 
+            'nbPiece', 
+            'nbChambre', 
+            'surface', 
+            'surfaceUnite', 
+            'idPays', 
+            'pays', 
+            'cp', 
+            'ville', 
+            'nbPhotos',
+            'firstThumb',
+            'permaLien',
+            'latitude',
+            'longitude',
+            'llPrecision'
+        )
+ 
+        self.val_xml_count = len(self.val_xml)
+
+
 
 
     def close(self):
@@ -242,14 +248,18 @@ class SqliteSeLogerDB(object):
 
         for annonce in annonces:
             values_list=[]
-            for val in val_xml:
+            for val in self.val_xml:
                 if annonce.find(val) is None or annonce.find(val).text is None:
                     values_list.append(u'Unknown')
                 else:
                     values_list.append(unicode(annonce.find(val).text))
 
             #inserting the add information inside the table
-            cursor.execute("INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(values_list))
+            cursor.execute(
+                    "INSERT INTO results VALUES " + \
+                        ','.join(itertools.repeat('?', self.val_xml_count)) + ")", 
+                    tuple(values_list)
+                    )
 
             annonce_id = annonce.find('idAnnonce').text
 
