@@ -227,11 +227,7 @@ class SqliteSeLogerDB(object):
         '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1'
 
         while url is not None:
-            try:
                 url = self._get(url, owner_id)
-            except:
-                self.log.warning('could not download %s',url)
-                url = None
 
     def _get(self, url, owner_id):
         """
@@ -242,7 +238,14 @@ class SqliteSeLogerDB(object):
         owner_id.lower() 
         db = self._getDb()
         cursor = db.cursor()
-        tree = etree.parse(url)
+
+        #we try to load the xml page
+        try:
+            tree = etree.parse(url)
+        except:
+            self.log.warning('could not download %s',url)
+            return None
+
         root = tree.getroot()
         annonces = root.find('annonces')
 
@@ -256,7 +259,7 @@ class SqliteSeLogerDB(object):
 
             #inserting the add information inside the table
             cursor.execute(
-                    "INSERT INTO results VALUES " + \
+                    "INSERT INTO results VALUES (" + \
                         ','.join(itertools.repeat('?', self.val_xml_count)) + ")", 
                     tuple(values_list)
                     )
