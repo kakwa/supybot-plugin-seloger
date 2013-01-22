@@ -87,6 +87,13 @@ the french website "<a href="http://www.seloger.com">www.seloger.com</a>".</p>
 <span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"supybot.plugins.SeLoger.public: True"</span> &gt;&gt;*.conf
 <span class="nv">$ </span>screen supybot *.conf
 </pre></div>
+
+<p>And it should work, however, some servers could kick the bot for excess flood 
+(it sends a lot of messages, specialy when adding new search), 
+just change this parameter inside your bot configuration file:</p>
+
+<pre><code>supybot.protocols.irc.throttleTime: &lt;float value&gt;
+</code></pre>
         </section>
 
         <aside id="sidebar">
