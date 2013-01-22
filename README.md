@@ -56,3 +56,11 @@ $ echo "supybot.plugins.SeLoger: True" >>*.conf
 $ echo "supybot.plugins.SeLoger.public: True" >>*.conf
 $ screen supybot *.conf
 ```
+
+And it should work, however, some servers could kick the bot for excess flood 
+(it sends a lot of messages, specialy when adding new search), 
+just change this parameter inside your bot configuration file:
+
+```
+supybot.protocols.irc.throttleTime: <float value>
+```
