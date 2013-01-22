@@ -68,6 +68,25 @@ the french website "<a href="http://www.seloger.com">www.seloger.com</a>".</p>
 <li>
 <code>sldisable &lt;search ID&gt;</code>: remove the given search</li>
 </ul><p>This plugin replies you and sends you new adds in query.</p>
+
+<h2>Installation</h2>
+
+<p>This section explains how to install supybot 
+(given that you already have git and the dependancies installed)</p>
+
+<p>It might also be a good idea to create a dedicated user for supybot.</p>
+
+<p>Here are the commands to create a supybot from scratch with this plugin:</p>
+
+<div class="highlight"><pre><span class="nv">$ </span>mkdir mybot/
+<span class="nv">$ </span><span class="nb">cd </span>mybot/
+<span class="nv">$ </span>supybot-wizard <span class="c">#answer the questions (install it in the default directory (./))</span>
+<span class="nv">$ </span>git clone https://github.com/kakwa/supybot-plugin-seloger.git plugins/SeLoger/
+<span class="nv">$ </span>sed -i <span class="s1">'s/\(supybot.plugins:.*\)/\1\ SeLoger/'</span> *.conf
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"supybot.plugins.SeLoger: True"</span> &gt;&gt;*.conf
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"supybot.plugins.SeLoger.public: True"</span> &gt;&gt;*.conf
+<span class="nv">$ </span>screen supybot *.conf
+</pre></div>
         </section>
 
         <aside id="sidebar">
