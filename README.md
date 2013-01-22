@@ -42,7 +42,7 @@ This plugin replies you and sends you new adds in query.
 This section explains how to install supybot 
 (given that you already have git and the dependancies installed)
 
-It might be a good idea to create a dedicated user for supybot.
+It might also be a good idea to create a dedicated user for supybot.
 
 Here are the commands to create a supybot from scratch with this plugin:
 
