@@ -272,6 +272,14 @@ class SqliteSeLogerDB(object):
         else:
             return None
 
+    def _get_date(self, add):
+        """
+        function getting the creation date of an add
+        arg 1: add
+        """
+        return add['dtCreation']
+
+
     def add_search(self, owner_id, cp, min_surf, max_price):
         """this function adds a search inside the database
         arg 1: te owner_id of the new search
@@ -375,8 +383,13 @@ class SqliteSeLogerDB(object):
             return_annonces.append(result)
 
         db.commit()
+
+        #we sort the adds by date
+        return_annonces.sort(key=self._get_date)
+        #we get the number of new adds
         number_of_new_adds = str(len(return_annonces))
         self.log.info('printing %s new adds', number_of_new_adds)
+        #we return the adds
         return return_annonces
 
 class SeLoger(callbacks.Plugin):
@@ -472,7 +485,8 @@ class SeLoger(callbacks.Plugin):
             self._update_db()
             for add in self.backend.get_new():
                 self._print_add(add,irc)
-            time.sleep(120)
+            #we search every 5 minutes
+            time.sleep(300)
             self._releaseLock('print')
 
     def _reformat_date(self, date):
@@ -509,6 +523,7 @@ class SeLoger(callbacks.Plugin):
                    'Date ajout: ' + self._reformat_date(add['dtCreation']), 
                    11
                    )
+
 
         msg = city + ' | ' + cp + ' | ' + date
         irc.reply(msg,to=user,private=True)
