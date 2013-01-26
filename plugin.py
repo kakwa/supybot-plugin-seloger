@@ -526,9 +526,8 @@ class SeLoger(callbacks.Plugin):
 
         #print the description
         msg = u'Description: ' + add['descriptif']
-        #description encoding is messy, we just convert it in ascii
-        #and suppress some \n
-        #msg = unicodedata.normalize('NFKD',msg).encode('ascii','ignore')
+
+        #\n creates some mess when we print them, so we remove them.
         msg = re.sub(r'\n', r' ', msg)
         irc.reply(msg,to=user,private=True)
 
