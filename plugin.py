@@ -354,7 +354,6 @@ class SqliteSeLogerDB(object):
         and marks them as "printed".
         no argument
         """
-        self.log.info('printing new adds')
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
@@ -376,6 +375,8 @@ class SqliteSeLogerDB(object):
             return_annonces.append(result)
 
         db.commit()
+        number_of_new_adds = str(len(return_annonces))
+        self.log.info('printing %s new adds', number_of_new_adds)
         return return_annonces
 
 class SeLoger(callbacks.Plugin):
