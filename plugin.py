@@ -310,7 +310,7 @@ class SqliteSeLogerDB(object):
         and puts the infos inside the database.
         no argument
         """
-        self.log.info('refreshing database')
+        self.log.info('begin refreshing database')
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
@@ -322,6 +322,7 @@ class SqliteSeLogerDB(object):
             self._search_seloger(
                 row['cp'],row['min_surf'],row['max_price'],row['owner_id']
                 )
+        self.log.info('end refreshing database')
 
     def disable_search(self, search_id, owner_id):
         """ this function disable a search
@@ -547,7 +548,7 @@ class SeLoger(callbacks.Plugin):
             else:
                 surface_by_room[rooms] = float(add['surface'])
     
-        for rooms in sorted(surface_by_room.iterkeys()):
+        for rooms in sorted(surface_by_room, key=int):
             list_number.append(( rooms  + ' room(s)',
                 number_adds_by_room[rooms]))
 
@@ -599,8 +600,8 @@ class SeLoger(callbacks.Plugin):
         list_price = []
         list_number = []
 
-        number_of_steps = 5
-        step = self._get_step(adds, 'surface', number_of_steps)
+        number_of_steps = 7
+        step = min(self._get_step(adds, 'surface', number_of_steps), 5)
 
         for add in adds:
             surface_range = str(int(float(add['surface']) / step))
@@ -621,7 +622,7 @@ class SeLoger(callbacks.Plugin):
                 price_by_range[surface_range] = float(add['prix']) \
                         / float(add['surface'])
  
-        for surface_range in sorted(number_adds_by_range.iterkeys()):
+        for surface_range in sorted(number_adds_by_range, key=int):
             label = str( int(surface_range) * step) + \
                     ' to ' +\
                     str((int(surface_range) + 1) * step)
