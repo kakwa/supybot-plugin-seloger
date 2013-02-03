@@ -498,6 +498,8 @@ class SeLoger(callbacks.Plugin):
 
     colors = wrap(colors)
 
+    ### The internal methods
+
     def _print_stats(self, user, irc, stats):
         """ small function to print a list of line in different color
         """
@@ -516,14 +518,19 @@ class SeLoger(callbacks.Plugin):
             color = (color + 1) % colors_len
             irc.reply(msg,to=user,private=True)
 
-    ### The internal methods
 
     def _gen_stat_rooms(self, user, irc, pc):
+        """internal function generating stats about the number of rooms
+        """
+        #we get all the adds of the user (with a filter on the postal code)
         adds = self.backend.get_all(user, pc)
+
+        #if we have nothing to make stats on
         if len(adds) == 0:
-            msg = 'no adds to stats'
+            msg = 'no stats about number of rooms available'
             irc.reply(msg,to=user,private=True)
             return
+
         number_adds_by_room = {}
         surface_by_room = {}
         price_by_room = {}
@@ -535,23 +542,32 @@ class SeLoger(callbacks.Plugin):
 
         for add in adds:
             rooms = add['nbPiece']
+            #we increment 'n (rooms)' 
             if rooms in number_adds_by_room:
                 number_adds_by_room[rooms] += 1
             else:
                 number_adds_by_room[rooms] = 1
+
+            #we add the price to the corresponding field
             if rooms in price_by_room:
                 price_by_room[rooms] += float(add['prix'])
             else:
                 price_by_room[rooms] = float(add['prix'])
+
+            #we add the surface to the corresponding field
             if rooms in surface_by_room:
                 surface_by_room[rooms] += float(add['surface'])
             else:
                 surface_by_room[rooms] = float(add['surface'])
     
+        #we generate the list of tuples
         for rooms in sorted(surface_by_room, key=int):
+
+            #the list for number of adds by number of rooms
             list_number.append(( rooms  + ' room(s)',
                 number_adds_by_room[rooms]))
 
+            #calcul of the avrage surface for this number of rooms
             surface_by_room[rooms] = surface_by_room[rooms] \
                     / number_adds_by_room[rooms]
 
@@ -559,20 +575,26 @@ class SeLoger(callbacks.Plugin):
                 int(surface_by_room[rooms]))) 
 
 
+            #calcul of the avrage price for this number of rooms
             price_by_room[rooms] = price_by_room[rooms] \
                 / number_adds_by_room[rooms] 
 
             list_price.append(( rooms  + ' room(s)', 
                 int(price_by_room[rooms])))
 
+        #we print all that
         graph_number = self.graph.graph(u'number of adds by room', list_number)
         self._print_stats(user, irc, graph_number)
+
         graph_surface =  self.graph.graph(u'surface by room', list_surface)
         self._print_stats(user, irc, graph_surface)
+
         graph_price = self.graph.graph(u'rent by room', list_price)
         self._print_stats(user, irc, graph_price)
 
     def _get_step(self, adds, id_row, number_of_steps):
+        """internal function generating a step for numerical range
+        """
         mini = float(adds[0][id_row])
         maxi = float(adds[0][id_row])
 
@@ -585,9 +607,13 @@ class SeLoger(callbacks.Plugin):
         return max(1, int((maxi - mini) / number_of_steps))
 
     def _gen_stat_surface(self, user, irc, pc):
+        """internal function generating stats about the surface
+        """
+        #we get all the adds of the user (with a filter on the postal code)
         adds = self.backend.get_all(user, pc)
+        #if we have nothing to make stats on
         if len(adds) == 0:
-            msg = 'no adds to stats'
+            msg = 'no stats about surface available'
             irc.reply(msg,to=user,private=True)
             return
 
@@ -601,20 +627,25 @@ class SeLoger(callbacks.Plugin):
         list_number = []
 
         number_of_steps = 7
+        #we calcul the step of the range (max step is 5)
         step = min(self._get_step(adds, 'surface', number_of_steps), 5)
 
         for add in adds:
             surface_range = str(int(float(add['surface']) / step))
+
+            #we count the number of adds by range
             if surface_range in number_adds_by_range:
                 number_adds_by_range[surface_range] += 1
             else:
                 number_adds_by_range[surface_range] = 1
 
+            #we add the rent to the corresponding range
             if surface_range in rent_by_range:
                 rent_by_range[surface_range] += float(add['prix'])
             else:
                 rent_by_range[surface_range] = float(add['prix'])
     
+            #we add the rent per square meter to the corresponding range
             if surface_range in price_by_range:
                 price_by_range[surface_range] += float(add['prix']) \
                         / float(add['surface'])
@@ -622,30 +653,38 @@ class SeLoger(callbacks.Plugin):
                 price_by_range[surface_range] = float(add['prix']) \
                         / float(add['surface'])
  
+        #we generate the list of tuples to print
         for surface_range in sorted(number_adds_by_range, key=int):
+            #calcul of the label
             label = str( int(surface_range) * step) + \
                     ' to ' +\
                     str((int(surface_range) + 1) * step)
 
+            #number of adds by range
             list_number.append(( label,
                 number_adds_by_range[surface_range]))
 
+            #calcul of mid rent by range
             mid_rent = int(rent_by_range[surface_range] \
                     / number_adds_by_range[surface_range])
 
             list_rent.append(( label,
                 mid_rent))
 
+            #calcul of mid rent per square meter by range
             mid_price = int(price_by_range[surface_range] \
                     / number_adds_by_range[surface_range])
 
             list_price.append(( label,
                 mid_price))
 
+        #we print all these stats
         graph_number = self.graph.graph(u'number of adds by surface range', list_number)
         self._print_stats(user, irc, graph_number)
+
         graph_rent =  self.graph.graph(u'rent by surface range', list_rent)
         self._print_stats(user, irc, graph_rent)
+
         graph_price = self.graph.graph(u'price per square meter by surface range', list_price)
         self._print_stats(user, irc, graph_price)
  
