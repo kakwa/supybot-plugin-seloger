@@ -34,6 +34,7 @@ Here is the commands list:
 * ```sladd <postal code> <min surface> <max price>```: add a new search for you
 * ```sllist```: list your active searches
 * ```sldisable <search ID>```: remove the given search
+* ```slstat <postal code|'all'>```: print some stats about your searches
 
 This plugin replies you and sends you new adds in query.
 
