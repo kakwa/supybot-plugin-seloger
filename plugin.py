@@ -27,6 +27,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 ###
 
+from pyasciigraph import Pyasciigraph 
 import os
 import time
 from lxml import etree
@@ -54,7 +55,7 @@ class SqliteSeLogerDB(object):
     def __init__(self, log, filename='db.seloger'):
         self.dbs = ircutils.IrcDict()
         self.filename = filename
-        self.log=log
+        self.log = log
         #the elements we get from the xml
         self.val_xml = (
             'idTiers', 
@@ -392,6 +393,39 @@ class SqliteSeLogerDB(object):
         #we return the adds
         return return_annonces
 
+    def get_all(self, owner_id, pc='all'):
+        """ this function returns all the adds of a given user and postal code
+        arg1: the owner id
+        arg2: the postal code
+        """
+        db = self._getDb()
+        db.row_factory = self._dict_factory
+        cursor = db.cursor()
+        #we get all the adds of a given user
+        cursor.execute("SELECT * FROM map WHERE owner_id = (?)",
+                (owner_id, )
+                )
+
+        return_annonces=[]
+        for row in cursor.fetchall():
+            uniq = row['uniq_id']
+
+            #we get the infos of the add
+            result = self._get_annonce(row['idAnnonce'])
+            #we add in the result the name of the owner
+            result['owner_id'] = row['owner_id']
+            #we add it only if we query all the adds 
+            #or it matches the postal code
+            if pc == 'all' or result['cp'] == pc:
+                return_annonces.append(result)
+
+        #we get the number of adds
+        number_of_adds = str(len(return_annonces))
+        self.log.info('getting %s adds', number_of_adds)
+        #we return the adds
+        return return_annonces
+
+
 class SeLoger(callbacks.Plugin):
     """This plugin search and alerts you in query if 
     new adds are available.
@@ -406,11 +440,12 @@ class SeLoger(callbacks.Plugin):
         self.backend = SqliteSeLogerDB(self.log)
         self.gettingLockLock = threading.Lock()
         self.locks = {}
+        self.graph = Pyasciigraph()
 
     ### the external methods
 
     def sladd(self, irc, msg, args, pc, min_surf, max_price):
-        """add <postal code> <min surface> <max price>
+        """usage: sladd <postal code> <min surface> <max price>
         Adds a new search for you ( /!\ many messages in the first batch )
         """
         user = irc.msg.nick 
@@ -421,7 +456,7 @@ class SeLoger(callbacks.Plugin):
     sladd = wrap(sladd, ['int', 'int', 'int'])
 
     def sldisable(self, irc, msg, args, id_search):
-        """disable <id_search>
+        """usage: sldisable <id_search>
         Disables a search
         """
         user = irc.msg.nick
@@ -432,7 +467,7 @@ class SeLoger(callbacks.Plugin):
     sldisable = wrap(sldisable, ['text'])
 
     def sllist(self, irc, msg, args):
-        """list
+        """usage: sllist
         list all your searches
         """
         user = irc.msg.nick 
@@ -442,8 +477,178 @@ class SeLoger(callbacks.Plugin):
 
     sllist = wrap(sllist)
 
+    def slstat(self, irc, msg, args, pc):
+        """usage: slstat_room <postal code|'all'>
+        give you some stats about your searches.
+        Specify 'all' (no filter), or a specific postal code
+        """
+        user = irc.msg.nick 
+        self._gen_stat_rooms(user, irc, pc)
+        self._gen_stat_surface(user, irc, pc)
+        msg='Done slstat'
+        irc.reply(msg,to=user,private=True)
+
+    slstat = wrap(slstat, ['text'])
+
+    def colors(self, irc, msg, args):
+        for color in range(16):
+            msg = ircutils.mircColor(str(color), color)
+            irc.reply(msg)
+
+    colors = wrap(colors)
+
+    def _print_stats(self, user, irc, stats):
+        """ small function to print a list of line in different color
+        """
+
+        #empty line for lisibility
+        msg = ' '
+        irc.reply(msg,to=user,private=True)
+
+        #list of colors we use (order matters)
+        colors = [ 15, 14, 10, 3, 7, 2, 6, 5 ]  
+        colors_len = len(colors)
+        color = 0
+
+        for line in stats:
+            msg = ircutils.mircColor(line, colors[color])
+            color = (color + 1) % colors_len
+            irc.reply(msg,to=user,private=True)
+
     ### The internal methods
 
+    def _gen_stat_rooms(self, user, irc, pc):
+        adds = self.backend.get_all(user, pc)
+        if len(adds) == 0:
+            msg = 'no adds to stats'
+            irc.reply(msg,to=user,private=True)
+            return
+        number_adds_by_room = {}
+        surface_by_room = {}
+        price_by_room = {}
+        surface_by_room = {}
+
+        list_surface = []
+        list_price = []
+        list_number = []
+
+        for add in adds:
+            rooms = add['nbPiece']
+            if rooms in number_adds_by_room:
+                number_adds_by_room[rooms] += 1
+            else:
+                number_adds_by_room[rooms] = 1
+            if rooms in price_by_room:
+                price_by_room[rooms] += float(add['prix'])
+            else:
+                price_by_room[rooms] = float(add['prix'])
+            if rooms in surface_by_room:
+                surface_by_room[rooms] += float(add['surface'])
+            else:
+                surface_by_room[rooms] = float(add['surface'])
+    
+        for rooms in sorted(surface_by_room.iterkeys()):
+            list_number.append(( rooms  + ' room(s)',
+                number_adds_by_room[rooms]))
+
+            surface_by_room[rooms] = surface_by_room[rooms] \
+                    / number_adds_by_room[rooms]
+
+            list_surface.append(( rooms  + ' room(s)', 
+                int(surface_by_room[rooms]))) 
+
+
+            price_by_room[rooms] = price_by_room[rooms] \
+                / number_adds_by_room[rooms] 
+
+            list_price.append(( rooms  + ' room(s)', 
+                int(price_by_room[rooms])))
+
+        graph_number = self.graph.graph(u'number of adds by room', list_number)
+        self._print_stats(user, irc, graph_number)
+        graph_surface =  self.graph.graph(u'surface by room', list_surface)
+        self._print_stats(user, irc, graph_surface)
+        graph_price = self.graph.graph(u'rent by room', list_price)
+        self._print_stats(user, irc, graph_price)
+
+    def _get_step(self, adds, id_row, number_of_steps):
+        mini = float(adds[0][id_row])
+        maxi = float(adds[0][id_row])
+
+        for add in adds:
+            value = float(add[id_row]) 
+            if value > maxi:
+                maxi = value
+            if value < mini:
+                mini = value
+        return max(1, int((maxi - mini) / number_of_steps))
+
+    def _gen_stat_surface(self, user, irc, pc):
+        adds = self.backend.get_all(user, pc)
+        if len(adds) == 0:
+            msg = 'no adds to stats'
+            irc.reply(msg,to=user,private=True)
+            return
+
+        number_adds_by_range = {}
+        rent_by_range = {}
+        price_by_range = {}
+
+
+        list_rent = []
+        list_price = []
+        list_number = []
+
+        number_of_steps = 5
+        step = self._get_step(adds, 'surface', number_of_steps)
+
+        for add in adds:
+            surface_range = str(int(float(add['surface']) / step))
+            if surface_range in number_adds_by_range:
+                number_adds_by_range[surface_range] += 1
+            else:
+                number_adds_by_range[surface_range] = 1
+
+            if surface_range in rent_by_range:
+                rent_by_range[surface_range] += float(add['prix'])
+            else:
+                rent_by_range[surface_range] = float(add['prix'])
+    
+            if surface_range in price_by_range:
+                price_by_range[surface_range] += float(add['prix']) \
+                        / float(add['surface'])
+            else:
+                price_by_range[surface_range] = float(add['prix']) \
+                        / float(add['surface'])
+ 
+        for surface_range in sorted(number_adds_by_range.iterkeys()):
+            label = str( int(surface_range) * step) + \
+                    ' to ' +\
+                    str((int(surface_range) + 1) * step)
+
+            list_number.append(( label,
+                number_adds_by_range[surface_range]))
+
+            mid_rent = int(rent_by_range[surface_range] \
+                    / number_adds_by_range[surface_range])
+
+            list_rent.append(( label,
+                mid_rent))
+
+            mid_price = int(price_by_range[surface_range] \
+                    / number_adds_by_range[surface_range])
+
+            list_price.append(( label,
+                mid_price))
+
+        graph_number = self.graph.graph(u'number of adds by surface range', list_number)
+        self._print_stats(user, irc, graph_number)
+        graph_rent =  self.graph.graph(u'rent by surface range', list_rent)
+        self._print_stats(user, irc, graph_rent)
+        graph_price = self.graph.graph(u'price per square meter by surface range', list_price)
+        self._print_stats(user, irc, graph_price)
+ 
+ 
     def __call__(self, irc, msg):
         """black supybot magic... at least for me
         """
