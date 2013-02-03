@@ -49,7 +49,7 @@ import supybot.world as world
 class SqliteSeLogerDB(object):
     """This Class is the backend of the plugin,
     it handles the database, its creation, its updates,
-    it also provides methods to get the adds information
+    it also provides methods to get the ads information
     """
 
     def __init__(self, log, filename='db.seloger'):
@@ -162,7 +162,7 @@ class SqliteSeLogerDB(object):
                           UNIQUE (uniq_id) ON CONFLICT IGNORE)"""
                       )
 
-        #generation of the results table (contains the adds info)
+        #generation of the results table (contains the ads info)
         #first: generate the string of fields from self.val_xml
         table_results = ''
         for val in self.val_xml:
@@ -185,8 +185,8 @@ class SqliteSeLogerDB(object):
         return db
 
     def _get_annonce(self, idAnnonce):
-        """backend function getting the information of one add 
-           arg 1: the add unique ID ('idAnnonce') 
+        """backend function getting the information of one ad
+           arg 1: the ad unique ID ('idAnnonce') 
         """
         db = self._getDb()
         db.row_factory = self._dict_factory
@@ -198,7 +198,7 @@ class SqliteSeLogerDB(object):
         return cursor.fetchone()
 
     def _search_seloger(self, cp, min_surf, max_price, owner_id):
-        """entry function for getting the adds on seloger.com
+        """entry function for getting the ads on seloger.com
         arg 1: the postal code
         arg 2: the minimal surface
         arg 3: the maximum rent
@@ -249,7 +249,7 @@ class SqliteSeLogerDB(object):
                 else:
                     values_list.append(unicode(annonce.find(val).text))
 
-            #inserting the add information inside the table
+            #inserting the ad information inside the table
             cursor.execute(
                     "INSERT INTO results VALUES (" + \
                     ','.join(itertools.repeat('?', self.val_xml_count)) + ")",
@@ -259,10 +259,10 @@ class SqliteSeLogerDB(object):
             annonce_id = annonce.find('idAnnonce').text
 
             #calcul of the uniq id for the mapping between 
-            #the searcher and the add
+            #the searcher and the ad
             uniq_id = md5.new(owner_id + annonce_id).hexdigest()
 
-            #inserting the new add inside map
+            #inserting the new ad inside map
             cursor.execute("INSERT INTO map VALUES (?,?,?,?)",\
                     (uniq_id, annonce_id, '1', owner_id ))
             db.commit()
@@ -273,12 +273,12 @@ class SqliteSeLogerDB(object):
         else:
             return None
 
-    def _get_date(self, add):
+    def _get_date(self, ad):
         """
-        function getting the creation date of an add
-        arg 1: add
+        function getting the creation date of an ad
+        arg 1: ad
         """
-        return add['dtCreation']
+        return ad['dtCreation']
 
 
     def add_search(self, owner_id, cp, min_surf, max_price):
@@ -360,49 +360,49 @@ class SqliteSeLogerDB(object):
         return cursor.fetchall()
 
     def get_new(self):
-        """ this function returns the adds not already printed
+        """ this function returns the ads not already printed
         and marks them as "printed".
         no argument
         """
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
-        #we get all the new adds
+        #we get all the new ads
         cursor.execute("SELECT * FROM map WHERE flag_shown = 1")
 
         return_annonces=[]
         for row in cursor.fetchall():
             uniq = row['uniq_id']
-            #we mark the add as "read"
+            #we mark the ad as "read"
             cursor.execute(
                 """UPDATE map SET flag_shown = 0 WHERE uniq_id = (?)""",
                 (uniq, )
                 )
-            #we get the infos of the add
+            #we get the infos of the ad
             result = self._get_annonce(row['idAnnonce'])
-            #we add in the result the name of the owner
+            #we ad in the result the name of the owner
             result['owner_id'] = row['owner_id']
             return_annonces.append(result)
 
         db.commit()
 
-        #we sort the adds by date
+        #we sort the ads by date
         return_annonces.sort(key=self._get_date)
-        #we get the number of new adds
-        number_of_new_adds = str(len(return_annonces))
-        self.log.info('printing %s new adds', number_of_new_adds)
-        #we return the adds
+        #we get the number of new ads
+        number_of_new_ads = str(len(return_annonces))
+        self.log.info('printing %s new ads', number_of_new_ads)
+        #we return the ads
         return return_annonces
 
     def get_all(self, owner_id, pc='all'):
-        """ this function returns all the adds of a given user and postal code
+        """ this function returns all the ads of a given user and postal code
         arg1: the owner id
         arg2: the postal code
         """
         db = self._getDb()
         db.row_factory = self._dict_factory
         cursor = db.cursor()
-        #we get all the adds of a given user
+        #we get all the ads of a given user
         cursor.execute("SELECT * FROM map WHERE owner_id = (?)",
                 (owner_id, )
                 )
@@ -411,25 +411,25 @@ class SqliteSeLogerDB(object):
         for row in cursor.fetchall():
             uniq = row['uniq_id']
 
-            #we get the infos of the add
+            #we get the infos of the ad
             result = self._get_annonce(row['idAnnonce'])
-            #we add in the result the name of the owner
+            #we ad in the result the name of the owner
             result['owner_id'] = row['owner_id']
-            #we add it only if we query all the adds 
+            #we ad it only if we query all the ads 
             #or it matches the postal code
             if pc == 'all' or result['cp'] == pc:
                 return_annonces.append(result)
 
-        #we get the number of adds
-        number_of_adds = str(len(return_annonces))
-        self.log.info('getting %s adds', number_of_adds)
-        #we return the adds
+        #we get the number of ads
+        number_of_ads = str(len(return_annonces))
+        self.log.info('getting %s ads', number_of_ads)
+        #we return the ads
         return return_annonces
 
 
 class SeLoger(callbacks.Plugin):
     """This plugin search and alerts you in query if 
-    new adds are available.
+    new ads are available.
     Use "sladd" for a new search.
     Use "sllist" to list you current search.
     Use "sldisable" to remove an old search."""
@@ -522,16 +522,16 @@ class SeLoger(callbacks.Plugin):
     def _gen_stat_rooms(self, user, irc, pc):
         """internal function generating stats about the number of rooms
         """
-        #we get all the adds of the user (with a filter on the postal code)
-        adds = self.backend.get_all(user, pc)
+        #we get all the ads of the user (with a filter on the postal code)
+        ads = self.backend.get_all(user, pc)
 
         #if we have nothing to make stats on
-        if len(adds) == 0:
+        if len(ads) == 0:
             msg = 'no stats about number of rooms available'
             irc.reply(msg,to=user,private=True)
             return
 
-        number_adds_by_room = {}
+        number_ads_by_room = {}
         surface_by_room = {}
         price_by_room = {}
         surface_by_room = {}
@@ -540,36 +540,36 @@ class SeLoger(callbacks.Plugin):
         list_price = []
         list_number = []
 
-        for add in adds:
-            rooms = add['nbPiece']
+        for ad in ads:
+            rooms = ad['nbPiece']
             #we increment 'n (rooms)' 
-            if rooms in number_adds_by_room:
-                number_adds_by_room[rooms] += 1
+            if rooms in number_ads_by_room:
+                number_ads_by_room[rooms] += 1
             else:
-                number_adds_by_room[rooms] = 1
+                number_ads_by_room[rooms] = 1
 
             #we add the price to the corresponding field
             if rooms in price_by_room:
-                price_by_room[rooms] += float(add['prix'])
+                price_by_room[rooms] += float(ad['prix'])
             else:
-                price_by_room[rooms] = float(add['prix'])
+                price_by_room[rooms] = float(ad['prix'])
 
             #we add the surface to the corresponding field
             if rooms in surface_by_room:
-                surface_by_room[rooms] += float(add['surface'])
+                surface_by_room[rooms] += float(ad['surface'])
             else:
-                surface_by_room[rooms] = float(add['surface'])
+                surface_by_room[rooms] = float(ad['surface'])
     
         #we generate the list of tuples
         for rooms in sorted(surface_by_room, key=int):
 
-            #the list for number of adds by number of rooms
+            #the list for number of ads by number of rooms
             list_number.append(( rooms  + ' room(s)',
-                number_adds_by_room[rooms]))
+                number_ads_by_room[rooms]))
 
             #calcul of the avrage surface for this number of rooms
             surface_by_room[rooms] = surface_by_room[rooms] \
-                    / number_adds_by_room[rooms]
+                    / number_ads_by_room[rooms]
 
             list_surface.append(( rooms  + ' room(s)', 
                 int(surface_by_room[rooms]))) 
@@ -577,13 +577,13 @@ class SeLoger(callbacks.Plugin):
 
             #calcul of the avrage price for this number of rooms
             price_by_room[rooms] = price_by_room[rooms] \
-                / number_adds_by_room[rooms] 
+                / number_ads_by_room[rooms] 
 
             list_price.append(( rooms  + ' room(s)', 
                 int(price_by_room[rooms])))
 
         #we print all that
-        graph_number = self.graph.graph(u'number of adds by room', list_number)
+        graph_number = self.graph.graph(u'number of ads by room', list_number)
         self._print_stats(user, irc, graph_number)
 
         graph_surface =  self.graph.graph(u'surface by room', list_surface)
@@ -592,14 +592,14 @@ class SeLoger(callbacks.Plugin):
         graph_price = self.graph.graph(u'rent by room', list_price)
         self._print_stats(user, irc, graph_price)
 
-    def _get_step(self, adds, id_row, number_of_steps):
+    def _get_step(self, ads, id_row, number_of_steps):
         """internal function generating a step for numerical range
         """
-        mini = float(adds[0][id_row])
-        maxi = float(adds[0][id_row])
+        mini = float(ads[0][id_row])
+        maxi = float(ads[0][id_row])
 
-        for add in adds:
-            value = float(add[id_row]) 
+        for ad in ads:
+            value = float(ad[id_row]) 
             if value > maxi:
                 maxi = value
             if value < mini:
@@ -609,15 +609,15 @@ class SeLoger(callbacks.Plugin):
     def _gen_stat_surface(self, user, irc, pc):
         """internal function generating stats about the surface
         """
-        #we get all the adds of the user (with a filter on the postal code)
-        adds = self.backend.get_all(user, pc)
+        #we get all the ads of the user (with a filter on the postal code)
+        ads = self.backend.get_all(user, pc)
         #if we have nothing to make stats on
-        if len(adds) == 0:
+        if len(ads) == 0:
             msg = 'no stats about surface available'
             irc.reply(msg,to=user,private=True)
             return
 
-        number_adds_by_range = {}
+        number_ads_by_range = {}
         rent_by_range = {}
         price_by_range = {}
 
@@ -628,58 +628,58 @@ class SeLoger(callbacks.Plugin):
 
         number_of_steps = 7
         #we calcul the step of the range (max step is 5)
-        step = min(self._get_step(adds, 'surface', number_of_steps), 5)
+        step = min(self._get_step(ads, 'surface', number_of_steps), 5)
 
-        for add in adds:
-            surface_range = str(int(float(add['surface']) / step))
+        for ad in ads:
+            surface_range = str(int(float(ad['surface']) / step))
 
-            #we count the number of adds by range
-            if surface_range in number_adds_by_range:
-                number_adds_by_range[surface_range] += 1
+            #we count the number of ads by range
+            if surface_range in number_ads_by_range:
+                number_ads_by_range[surface_range] += 1
             else:
-                number_adds_by_range[surface_range] = 1
+                number_ads_by_range[surface_range] = 1
 
             #we add the rent to the corresponding range
             if surface_range in rent_by_range:
-                rent_by_range[surface_range] += float(add['prix'])
+                rent_by_range[surface_range] += float(ad['prix'])
             else:
-                rent_by_range[surface_range] = float(add['prix'])
+                rent_by_range[surface_range] = float(ad['prix'])
     
             #we add the rent per square meter to the corresponding range
             if surface_range in price_by_range:
-                price_by_range[surface_range] += float(add['prix']) \
-                        / float(add['surface'])
+                price_by_range[surface_range] += float(ad['prix']) \
+                        / float(ad['surface'])
             else:
-                price_by_range[surface_range] = float(add['prix']) \
-                        / float(add['surface'])
+                price_by_range[surface_range] = float(ad['prix']) \
+                        / float(ad['surface'])
  
         #we generate the list of tuples to print
-        for surface_range in sorted(number_adds_by_range, key=int):
+        for surface_range in sorted(number_ads_by_range, key=int):
             #calcul of the label
             label = str( int(surface_range) * step) + \
                     ' to ' +\
                     str((int(surface_range) + 1) * step)
 
-            #number of adds by range
+            #number of ads by range
             list_number.append(( label,
-                number_adds_by_range[surface_range]))
+                number_ads_by_range[surface_range]))
 
             #calcul of mid rent by range
             mid_rent = int(rent_by_range[surface_range] \
-                    / number_adds_by_range[surface_range])
+                    / number_ads_by_range[surface_range])
 
             list_rent.append(( label,
                 mid_rent))
 
             #calcul of mid rent per square meter by range
             mid_price = int(price_by_range[surface_range] \
-                    / number_adds_by_range[surface_range])
+                    / number_ads_by_range[surface_range])
 
             list_price.append(( label,
                 mid_price))
 
         #we print all these stats
-        graph_number = self.graph.graph(u'number of adds by surface range', list_number)
+        graph_number = self.graph.graph(u'number of ads by surface range', list_number)
         self._print_stats(user, irc, graph_number)
 
         graph_rent =  self.graph.graph(u'rent by surface range', list_rent)
@@ -699,7 +699,7 @@ class SeLoger(callbacks.Plugin):
 
     def _update_db(self):
         """direct call to do_search from the backend class
-        it gets the new adds from SeLoger
+        it gets the new ads from SeLoger
         """
         self.backend.do_searches()
 
@@ -728,8 +728,8 @@ class SeLoger(callbacks.Plugin):
         """
         if self._acquireLock('print', blocking=False):
             self._update_db()
-            for add in self.backend.get_new():
-                self._print_add(add,irc)
+            for ad in self.backend.get_new():
+                self._print_ad(ad,irc)
             #we search every 5 minutes
             time.sleep(300)
             self._releaseLock('print')
@@ -740,32 +740,32 @@ class SeLoger(callbacks.Plugin):
         d = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
         return  d.strftime('%d/%m/%Y %H:%M')
 
-    def _print_add(self,add,irc):
-        """this function prints one add
+    def _print_ad(self,ad,irc):
+        """this function prints one ad
         """
         #user needs to be an ascii string, not unicode
-        user = str(add['owner_id'])
+        user = str(ad['owner_id'])
 
         #empty line for lisibility
         msg = ' '
         irc.reply(msg,to=user,private=True)
 
         #printing the pric, number of rooms and surface
-        price = ircutils.mircColor('Prix: ' + add['prix'] + add['prixUnite'],8)
-        rooms  = ircutils.mircColor('Pieces: ' + add['nbPiece'],4) 
+        price = ircutils.mircColor('Prix: ' + ad['prix'] + ad['prixUnite'],8)
+        rooms  = ircutils.mircColor('Pieces: ' + ad['nbPiece'],4) 
         surface =  ircutils.mircColor(
-                        'Surface: ' + add['surface'] + add['surfaceUnite'],
+                        'Surface: ' + ad['surface'] + ad['surfaceUnite'],
                         13
                         )
 
         msg = price + ' | ' + rooms + ' | ' + surface
         irc.reply(msg,to=user,private=True)
 
-        #printing the city, the postal code and date of the add
-        city = ircutils.mircColor('Ville: ' + add['ville'], 11)  
-        cp = ircutils.mircColor('Code postal: ' + add['cp'], 12) 
+        #printing the city, the postal code and date of the ad
+        city = ircutils.mircColor('Ville: ' + ad['ville'], 11)  
+        cp = ircutils.mircColor('Code postal: ' + ad['cp'], 12) 
         date = ircutils.mircColor(
-                   'Date ajout: ' + self._reformat_date(add['dtCreation']), 
+                   'Date ajout: ' + self._reformat_date(ad['dtCreation']), 
                    11
                    )
 
@@ -776,31 +776,31 @@ class SeLoger(callbacks.Plugin):
         #printing a googlemaps url to see where it is (data not accurate)
         msg = ircutils.mircColor(
                     'Localisation: https://maps.google.com/maps?q=' \
-                            + add['latitude'] + '+' + add['longitude'], 
+                            + ad['latitude'] + '+' + ad['longitude'], 
                     3
                     )
         irc.reply(msg,to=user,private=True)
 
         #printing "Proximite" info
-        msg = ircutils.mircColor('Proximite: ' + add['proximite'],2)
+        msg = ircutils.mircColor('Proximite: ' + ad['proximite'],2)
         irc.reply(msg,to=user,private=True)
 
         #print the description
-        msg = u'Description: ' + add['descriptif']
+        msg = u'Description: ' + ad['descriptif']
 
         #\n creates some mess when we print them, so we remove them.
         msg = re.sub(r'\n', r' ', msg)
         irc.reply(msg,to=user,private=True)
 
-        #printing the permanent link of the add
-        msg = ircutils.mircColor('Lien: ' + add['permaLien'],9)
+        #printing the permanent link of the ad
+        msg = ircutils.mircColor('Lien: ' + ad['permaLien'],9)
         irc.reply(msg,to=user,private=True)
 
         #one more time, an empty line for lisibility
         msg =  ' '
         irc.reply(msg,to=user,private=True)
 
-        self.log.debug('printing add %s of %s ', add['idAnnonce'], user)
+        self.log.debug('printing ad %s of %s ', ad['idAnnonce'], user)
  
     def _addSearch(self, user, pc, min_surf, max_price):
         """this function adds a search"""
