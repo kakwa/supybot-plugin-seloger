@@ -65,3 +65,7 @@ just change this parameter inside your bot configuration file:
 ```
 supybot.protocols.irc.throttleTime: <float value>
 ```
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/kakwa/supybot-plugin-seloger/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
