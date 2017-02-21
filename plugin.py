@@ -139,6 +139,7 @@ class SqliteSeLogerDB(object):
         #cp: the postal code
         #min_surf: minimum surface of the annonce
         #max_price: maximum rent
+        #ad_type: type of the ad (1 -> rent, 2 -> sell)
         cursor.execute("""CREATE TABLE searches (
                           search_id TEXT PRIMARY KEY,
                           owner_id TEXT, 
@@ -146,6 +147,7 @@ class SqliteSeLogerDB(object):
                           cp TEXT,
                           min_surf TEXT,
                           max_price TEXT,
+                          ad_type TEXT,
                           UNIQUE (search_id) ON CONFLICT IGNORE)"""
                       )
 
@@ -158,6 +160,7 @@ class SqliteSeLogerDB(object):
                           uniq_id TEXT PRIMARY KEY,
                           idAnnonce TEXT,
                           flag_shown INT,
+                          ad_type TEXT,
                           owner_id TEXT,
                           UNIQUE (uniq_id) ON CONFLICT IGNORE)"""
                       )
@@ -197,26 +200,27 @@ class SqliteSeLogerDB(object):
             )
         return cursor.fetchone()
 
-    def _search_seloger(self, cp, min_surf, max_price, owner_id):
+    def _search_seloger(self, cp, min_surf, max_price, ad_type, owner_id):
         """entry function for getting the ads on seloger.com
         arg 1: the postal code
         arg 2: the minimal surface
         arg 3: the maximum rent
-        arg 4: the owner_id of the search (the user making the search)
+        arg 4: type of the add (1 -> location, 2 -> sell) 
+        arg 5: the owner_id of the search (the user making the search)
 
         """
         owner_id.lower() 
         #the first url for the search
         url = 'http://ws.seloger.com/search.xml?cp=' + cp + \
-        '&idqfix=1&idtt=1&idtypebien=1,2&px_loyerbtw=NAN%2f' + max_price + \
-        '&surfacebtw=' + min_surf + '%2fNAN&SEARCHpg=1'
+        '&idqfix=1&idtt=' + ad_type + '&idtypebien=1,2&pxmax=' + max_price + \
+        '&surfacemin=' + min_surf
 
         #we search all the pages 
         #(the current page gives the next if it exists)
         while url is not None:
-                url = self._get(url, owner_id)
+                url = self._get(url, ad_type, owner_id)
 
-    def _get(self, url, owner_id):
+    def _get(self, url, ad_type, owner_id):
         """
         function getting the xml pages  and putting
         the results inside the database
@@ -263,8 +267,8 @@ class SqliteSeLogerDB(object):
             uniq_id = md5.new(owner_id + annonce_id).hexdigest()
 
             #inserting the new ad inside map
-            cursor.execute("INSERT INTO map VALUES (?,?,?,?)",\
-                    (uniq_id, annonce_id, '1', owner_id ))
+            cursor.execute("INSERT INTO map VALUES (?,?,?,?,?)",\
+                    (uniq_id, annonce_id, '1', ad_type, owner_id))
             db.commit()
 
         #if there is another page, we return it, we return None otherwise
@@ -281,7 +285,7 @@ class SqliteSeLogerDB(object):
         return ad['dtCreation']
 
 
-    def add_search(self, owner_id, cp, min_surf, max_price):
+    def add_search(self, owner_id, cp, min_surf, max_price, ad_type):
         """this function adds a search inside the database
         arg 1: te owner_id of the new search
         arg 2: the postal code of the new search
@@ -296,8 +300,8 @@ class SqliteSeLogerDB(object):
         search_id = md5.new(owner_id + cp + min_surf + max_price).hexdigest()
 
         #insertion of the new search parameters
-        cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?)",
-            (search_id, owner_id, '1', cp, min_surf, max_price)
+        cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (search_id, owner_id, '1', cp, min_surf, max_price, ad_type)
             )
 
         db.commit()
@@ -320,7 +324,7 @@ class SqliteSeLogerDB(object):
         #for each searches we query seloger.com
         for row in cursor.fetchall():
             self._search_seloger(
-                row['cp'],row['min_surf'],row['max_price'],row['owner_id']
+                row['cp'],row['min_surf'],row['max_price'],row['ad_type'],row['owner_id']
                 )
         self.log.info('end refreshing database')
 
@@ -394,7 +398,7 @@ class SqliteSeLogerDB(object):
         #we return the ads
         return return_annonces
 
-    def get_all(self, owner_id, pc='all'):
+    def get_all(self, owner_id, pc='all', ad_type='1'):
         """ this function returns all the ads of a given user and postal code
         arg1: the owner id
         arg2: the postal code
@@ -403,8 +407,8 @@ class SqliteSeLogerDB(object):
         db.row_factory = self._dict_factory
         cursor = db.cursor()
         #we get all the ads of a given user
-        cursor.execute("SELECT * FROM map WHERE owner_id = (?)",
-                (owner_id, )
+        cursor.execute("SELECT * FROM map WHERE owner_id = (?) AND ad_type = (?)",
+                (owner_id, ad_type)
                 )
 
         return_annonces=[]
@@ -445,16 +449,27 @@ class SeLoger(callbacks.Plugin):
 
     ### the external methods
 
-    def sladd(self, irc, msg, args, pc, min_surf, max_price):
-        """usage: sladd <postal code> <min surface> <max price>
-        Adds a new search for you ( /!\ many messages in the first batch )
+    def sladdrent(self, irc, msg, args, pc, min_surf, max_price):
+        """usage: sladd_rent <postal code> <min surface> <max price>
+        Adds a new rent search for you ( /!\ many messages in the first batch )
         """
         user = irc.msg.nick 
-        self._addSearch(str(user), str(pc), str(min_surf), str(max_price))
+        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '1')
         msg='Done sladd'
         irc.reply(msg,to=user,private=True)
 
-    sladd = wrap(sladd, ['int', 'int', 'int'])
+    sladdrent = wrap(sladdrent, ['int', 'int', 'int'])
+
+    def sladdbuy(self, irc, msg, args, pc, min_surf, max_price):
+        """usage: sladd_buy <postal code> <min surface> <max price>
+        Adds a new buy search for you ( /!\ many messages in the first batch )
+        """
+        user = irc.msg.nick 
+        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '2')
+        msg='Done sladd'
+        irc.reply(msg,to=user,private=True)
+
+    sladdbuy = wrap(sladdbuy, ['int', 'int', 'int'])
 
     def sldisable(self, irc, msg, args, id_search):
         """usage: sldisable <id_search>
@@ -478,18 +493,31 @@ class SeLoger(callbacks.Plugin):
 
     sllist = wrap(sllist)
 
-    def slstat(self, irc, msg, args, pc):
-        """usage: slstat_room <postal code|'all'>
-        give you some stats about your searches.
+    def slstatrent(self, irc, msg, args, pc):
+        """usage: slstatrent <postal code|'all'>
+        give you some stats about your rent searches.
         Specify 'all' (no filter), or a specific postal code
         """
         user = irc.msg.nick 
-        self._gen_stat_rooms(user, irc, pc)
-        self._gen_stat_surface(user, irc, pc)
-        msg='Done slstat'
+        self._gen_stat_rooms(user, irc, pc, '1')
+        self._gen_stat_surface(user, irc, pc, '1')
+        msg='Done slstatrent'
         irc.reply(msg,to=user,private=True)
 
-    slstat = wrap(slstat, ['text'])
+    slstatrent = wrap(slstatrent, ['text'])
+
+    def slstatbuy(self, irc, msg, args, pc):
+        """usage: slstatbuy <postal code|'all'>
+        give you some stats about your buy searches.
+        Specify 'all' (no filter), or a specific postal code
+        """
+        user = irc.msg.nick 
+        self._gen_stat_rooms(user, irc, pc, '2')
+        self._gen_stat_surface(user, irc, pc, '2')
+        msg='Done slstatbuy'
+        irc.reply(msg,to=user,private=True)
+
+    slstatbuy = wrap(slstatbuy, ['text'])
 
     def colors(self, irc, msg, args):
         for color in range(16):
@@ -519,11 +547,11 @@ class SeLoger(callbacks.Plugin):
             irc.reply(msg,to=user,private=True)
 
 
-    def _gen_stat_rooms(self, user, irc, pc):
+    def _gen_stat_rooms(self, user, irc, pc, ad_type):
         """internal function generating stats about the number of rooms
         """
         #we get all the ads of the user (with a filter on the postal code)
-        ads = self.backend.get_all(user, pc)
+        ads = self.backend.get_all(user, pc, ad_type)
 
         #if we have nothing to make stats on
         if len(ads) == 0:
@@ -589,7 +617,7 @@ class SeLoger(callbacks.Plugin):
         graph_surface =  self.graph.graph(u'surface by room', list_surface)
         self._print_stats(user, irc, graph_surface)
 
-        graph_price = self.graph.graph(u'rent by room', list_price)
+        graph_price = self.graph.graph(u'price by room', list_price)
         self._print_stats(user, irc, graph_price)
 
     def _get_step(self, ads, id_row, number_of_steps):
@@ -606,11 +634,11 @@ class SeLoger(callbacks.Plugin):
                 mini = value
         return max(1, int((maxi - mini) / number_of_steps))
 
-    def _gen_stat_surface(self, user, irc, pc):
+    def _gen_stat_surface(self, user, irc, pc, ad_type):
         """internal function generating stats about the surface
         """
         #we get all the ads of the user (with a filter on the postal code)
-        ads = self.backend.get_all(user, pc)
+        ads = self.backend.get_all(user, pc, ad_type)
         #if we have nothing to make stats on
         if len(ads) == 0:
             msg = 'no stats about surface available'
@@ -682,7 +710,7 @@ class SeLoger(callbacks.Plugin):
         graph_number = self.graph.graph(u'number of ads by surface range', list_number)
         self._print_stats(user, irc, graph_number)
 
-        graph_rent =  self.graph.graph(u'rent by surface range', list_rent)
+        graph_rent =  self.graph.graph(u'price by surface range', list_rent)
         self._print_stats(user, irc, graph_rent)
 
         graph_price = self.graph.graph(u'price per square meter by surface range', list_price)
@@ -802,9 +830,9 @@ class SeLoger(callbacks.Plugin):
 
         self.log.debug('printing ad %s of %s ', ad['idAnnonce'], user)
  
-    def _addSearch(self, user, pc, min_surf, max_price):
+    def _addSearch(self, user, pc, min_surf, max_price, ad_type):
         """this function adds a search"""
-        self.backend.add_search(user, pc, min_surf, max_price)
+        self.backend.add_search(user, pc, min_surf, max_price, ad_type)
 
     def _disableSearch(self, user, id_search):
         """this function disables a search"""

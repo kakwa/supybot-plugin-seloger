@@ -31,10 +31,12 @@ This plugin relies on:
 
 Here is the commands list: 
 
-* ```sladd <postal code> <min surface> <max price>```: add a new search for you
+* ```sladdrent <postal code> <min surface> <max price>```: add a new rent search for you
+* ```sladdbuy <postal code> <min surface> <max price>```: add a new buy search for you
 * ```sllist```: list your active searches
 * ```sldisable <search ID>```: remove the given search
-* ```slstat <postal code|'all'>```: print some stats about your searches
+* ```slstatrent <postal code|'all'>```: print some stats about your rent searches
+* ```slstatbuy <postal code|'all'>```: print some stats about your buy searches
 
 This plugin replies you and sends you new adds in query.
 
