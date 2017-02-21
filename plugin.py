@@ -253,23 +253,25 @@ class SqliteSeLogerDB(object):
                 else:
                     values_list.append(unicode(annonce.find(val).text))
 
-            #inserting the ad information inside the table
-            cursor.execute(
-                    "INSERT INTO results VALUES (" + \
-                    ','.join(itertools.repeat('?', self.val_xml_count)) + ")",
-                    tuple(values_list)
-                    )
+            # inserting the ad information inside the table
+            # ignore Viager
+            if not re.match(r'.*[Vv]iager.*', annonce.find('descriptif').text) and not re.match(r'.*/viagers/.*', annonce.find('permaLien').text):
+                cursor.execute(
+                        "INSERT INTO results VALUES (" + \
+                        ','.join(itertools.repeat('?', self.val_xml_count)) + ")",
+                        tuple(values_list)
+                        )
 
-            annonce_id = annonce.find('idAnnonce').text
+                annonce_id = annonce.find('idAnnonce').text
 
-            #calcul of the uniq id for the mapping between 
-            #the searcher and the ad
-            uniq_id = md5.new(owner_id + annonce_id).hexdigest()
+                #calcul of the uniq id for the mapping between 
+                #the searcher and the ad
+                uniq_id = md5.new(owner_id + annonce_id).hexdigest()
 
-            #inserting the new ad inside map
-            cursor.execute("INSERT INTO map VALUES (?,?,?,?,?)",\
-                    (uniq_id, annonce_id, '1', ad_type, owner_id))
-            db.commit()
+                #inserting the new ad inside map
+                cursor.execute("INSERT INTO map VALUES (?,?,?,?,?)",\
+                        (uniq_id, annonce_id, '1', ad_type, owner_id))
+                db.commit()
 
         #if there is another page, we return it, we return None otherwise
         if tree.xpath('//recherche/pageSuivante'):
