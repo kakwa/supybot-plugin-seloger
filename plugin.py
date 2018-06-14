@@ -148,6 +148,7 @@ class SqliteSeLogerDB(object):
                           min_surf TEXT,
                           max_price TEXT,
                           ad_type TEXT,
+                          nb_pieces TEXT,
                           UNIQUE (search_id) ON CONFLICT IGNORE)"""
                       )
 
@@ -200,20 +201,22 @@ class SqliteSeLogerDB(object):
             )
         return cursor.fetchone()
 
-    def _search_seloger(self, cp, min_surf, max_price, ad_type, owner_id):
+    def _search_seloger(self, cp, min_surf, max_price, ad_type, owner_id, nb_pieces_min):
         """entry function for getting the ads on seloger.com
         arg 1: the postal code
         arg 2: the minimal surface
         arg 3: the maximum rent
         arg 4: type of the add (1 -> location, 2 -> sell) 
         arg 5: the owner_id of the search (the user making the search)
+        arg 6: nb_pieces_min, minimum number of rooms 
 
         """
         owner_id.lower() 
         #the first url for the search
+        nb_pieces_search = ','.join([str(x) for x in range(nb_pieces_min, 20)])
         url = 'http://ws.seloger.com/search.xml?cp=' + cp + \
         '&idqfix=1&idtt=' + ad_type + '&idtypebien=1,2&pxmax=' + max_price + \
-        '&surfacemin=' + min_surf
+        '&surfacemin=' + min_surf + '&nb_pieces=' + nb_pieces_search
 
         #we search all the pages 
         #(the current page gives the next if it exists)
@@ -287,12 +290,13 @@ class SqliteSeLogerDB(object):
         return ad['dtCreation']
 
 
-    def add_search(self, owner_id, cp, min_surf, max_price, ad_type):
+    def add_search(self, owner_id, cp, min_surf, max_price, ad_type, nb_pieces_min):
         """this function adds a search inside the database
         arg 1: te owner_id of the new search
         arg 2: the postal code of the new search
         arg 3: the minimal surface
         arg 4: the maximum price
+        arg 4: the minimum number of room
         """
         owner_id.lower() 
         db = self._getDb()
@@ -302,8 +306,8 @@ class SqliteSeLogerDB(object):
         search_id = md5.new(owner_id + cp + min_surf + max_price).hexdigest()
 
         #insertion of the new search parameters
-        cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (search_id, owner_id, '1', cp, min_surf, max_price, ad_type)
+        cursor.execute("INSERT INTO searches VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (search_id, owner_id, '1', cp, min_surf, max_price, ad_type, nb_pieces_min)
             )
 
         db.commit()
@@ -326,7 +330,7 @@ class SqliteSeLogerDB(object):
         #for each searches we query seloger.com
         for row in cursor.fetchall():
             self._search_seloger(
-                row['cp'],row['min_surf'],row['max_price'],row['ad_type'],row['owner_id']
+                row['cp'],row['min_surf'],row['max_price'],row['ad_type'],row['owner_id'],row['nb_pieces']
                 )
         self.log.info('end refreshing database')
 
@@ -451,23 +455,23 @@ class SeLoger(callbacks.Plugin):
 
     ### the external methods
 
-    def sladdrent(self, irc, msg, args, pc, min_surf, max_price):
-        """usage: sladd_rent <postal code> <min surface> <max price>
+    def sladdrent(self, irc, msg, args, pc, min_surf, max_price, nb_pieces=0):
+        """usage: sladd_rent <postal code> <min surface> <max price> [<nb_pieces>]
         Adds a new rent search for you ( /!\ many messages in the first batch )
         """
         user = irc.msg.nick 
-        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '1')
+        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '1', str(nb_pieces))
         msg='Done sladd'
         irc.reply(msg,to=user,private=True)
 
     sladdrent = wrap(sladdrent, ['int', 'int', 'int'])
 
-    def sladdbuy(self, irc, msg, args, pc, min_surf, max_price):
-        """usage: sladd_buy <postal code> <min surface> <max price>
+    def sladdbuy(self, irc, msg, args, pc, min_surf, max_price, nb_pieces=0):
+        """usage: sladd_buy <postal code> <min surface> <max price> [<nb_pieces>]
         Adds a new buy search for you ( /!\ many messages in the first batch )
         """
         user = irc.msg.nick 
-        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '2')
+        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '2', nb_pieces)
         msg='Done sladd'
         irc.reply(msg,to=user,private=True)
 
@@ -848,7 +852,9 @@ class SeLoger(callbacks.Plugin):
             surface = ircutils.mircColor("Surface >= " + search['min_surf'], 4)
             loyer = ircutils.mircColor("Loyer <= " + search['max_price'], 13)
             cp = ircutils.mircColor("cp == " + search['cp'], 11)
-            msg = id_search + " | " + surface + " | " + loyer + " | " + cp
+            type_ad = ircutils.mircColor("type ad == " + search['ad_type'], 14)
+            nb_pieces = ircutils.mircColor("Pieces >= " + search['nb_pieces'], 12)
+            msg = id_search + " | " + surface + " | " + loyer + " | " + cp + " | " + type_ad + " | " + nb_pieces
             irc.reply(msg,to=user,private=True)
 
 Class = SeLoger
