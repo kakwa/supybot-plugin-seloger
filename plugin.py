@@ -486,7 +486,7 @@ class SeLoger(callbacks.Plugin):
         for cmd in help_content:
             msg = ircutils.underline(help_content[cmd])
             irc.reply(msg,to=user,private=True)
-            msg = ircutils.mircColor(str(cmd), 12)
+            msg = ircutils.mircColor(str(cmd), 8)
             irc.reply(msg,to=user,private=True)
             #msg = ''
             #irc.reply(msg,to=user,private=True)
