@@ -246,6 +246,9 @@ class SqliteSeLogerDB(object):
         root = tree.getroot()
         annonces = root.find('annonces')
 
+        if annonces is None:
+            return None
+
         for annonce in annonces:
             values_list=[]
             for val in self.val_xml:
