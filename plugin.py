@@ -790,8 +790,12 @@ class SeLoger(callbacks.Plugin):
         """
         if self._acquireLock('print', blocking=False):
             self._update_db()
-            for ad in self.backend.get_new():
-                self._print_ad(ad,irc)
+            ads = self.backend.get_new()
+            total = len(ads)
+            counter = 1
+            for ad in ads:
+                self._print_ad(ad, irc, counter, total)
+                counter += 1
             #we search every 5 minutes
             time.sleep(300)
             self._releaseLock('print')
@@ -802,14 +806,14 @@ class SeLoger(callbacks.Plugin):
         d = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
         return  d.strftime('%d/%m/%Y %H:%M')
 
-    def _print_ad(self,ad,irc):
+    def _print_ad(self,ad,irc, counter, total):
         """this function prints one ad
         """
         #user needs to be an ascii string, not unicode
         user = str(ad['owner_id'])
 
         #empty line for lisibility
-        msg = ' '
+        msg = 'new ad %d/%d' % (counter, total)
         irc.reply(msg,to=user,private=True)
 
         #printing the pric, number of rooms and surface
