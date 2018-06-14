@@ -455,7 +455,7 @@ class SeLoger(callbacks.Plugin):
 
     ### the external methods
 
-    def sladdrent(self, irc, msg, args, pc, min_surf, max_price, nb_pieces=0):
+    def sladdrent(self, irc, msg, args, pc, min_surf, max_price, nb_pieces):
         """usage: sladd_rent <postal code> <min surface> <max price> [<nb_pieces>]
         Adds a new rent search for you ( /!\ many messages in the first batch )
         """
@@ -464,18 +464,19 @@ class SeLoger(callbacks.Plugin):
         msg='Done sladd'
         irc.reply(msg,to=user,private=True)
 
-    sladdrent = wrap(sladdrent, ['int', 'int', 'int'])
+    sladdrent = wrap(sladdrent, ['int', 'int', 'int', 'int'])
 
-    def sladdbuy(self, irc, msg, args, pc, min_surf, max_price, nb_pieces=0):
+    def sladdbuy(self, irc, msg, args, pc, min_surf, max_price, nb_pieces):
         """usage: sladd_buy <postal code> <min surface> <max price> [<nb_pieces>]
         Adds a new buy search for you ( /!\ many messages in the first batch )
         """
         user = irc.msg.nick 
-        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '2', nb_pieces)
+        self._addSearch(str(user), str(pc), str(min_surf), str(max_price), '2',
+                str(nb_pieces))
         msg='Done sladd'
         irc.reply(msg,to=user,private=True)
 
-    sladdbuy = wrap(sladdbuy, ['int', 'int', 'int'])
+    sladdbuy = wrap(sladdbuy, ['int', 'int', 'int', 'int'])
 
     def sldisable(self, irc, msg, args, id_search):
         """usage: sldisable <id_search>
@@ -836,9 +837,10 @@ class SeLoger(callbacks.Plugin):
 
         self.log.debug('printing ad %s of %s ', ad['idAnnonce'], user)
  
-    def _addSearch(self, user, pc, min_surf, max_price, ad_type):
+    def _addSearch(self, user, pc, min_surf, max_price, ad_type, nb_pieces):
         """this function adds a search"""
-        self.backend.add_search(user, pc, min_surf, max_price, ad_type)
+        self.backend.add_search(user, pc, min_surf, max_price, ad_type,
+                nb_pieces)
 
     def _disableSearch(self, user, id_search):
         """this function disables a search"""
