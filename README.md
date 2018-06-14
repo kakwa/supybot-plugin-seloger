@@ -29,14 +29,50 @@ This plugin relies on:
 
 ## Commands ##
 
-Here is the commands list: 
+Here is the commands list with a few examples:
 
-* ```sladdrent <postal code> <min surface> <max price>```: add a new rent search for you
-* ```sladdbuy <postal code> <min surface> <max price>```: add a new buy search for you
-* ```sllist```: list your active searches
-* ```sldisable <search ID>```: remove the given search
-* ```slstatrent <postal code|'all'>```: print some stats about your rent searches
-* ```slstatbuy <postal code|'all'>```: print some stats about your buy searches
+* `slhelp`: help for this module
+
+```bash
+slhelp
+```
+
+* `sladdrent <postal code> <min surface> <max price> <min_num_room>`: add a new rent search for you
+
+```bash
+sladdrent 59000 20 600 1
+```
+
+* `sladdbuy <postal code> <min surface> <max price> <min_num_room>`: add a new buy search for you
+
+```bash
+sladdbuy 75001 20 6000000000 10
+```
+
+* `sllist`: list your active searches
+
+```bash
+sllist
+```
+
+* `sldisable <search ID>`: remove the given search (use sllist to recover the <search ID>)
+
+
+```bash
+sldisable 
+```
+
+* `slstatrent <postal code|'all'>`: print some stats about your rent searches
+
+```bash
+slstatrent 59000
+```
+
+* `slstatbuy <postal code|'all'>`: print some stats about your buy searches
+
+```bash
+slstatbuy all
+```
 
 This plugin replies you and sends you new adds in query.
 

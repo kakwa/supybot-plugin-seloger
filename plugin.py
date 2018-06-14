@@ -466,6 +466,29 @@ class SeLoger(callbacks.Plugin):
 
     sladdrent = wrap(sladdrent, ['int', 'int', 'int', 'int'])
 
+    def slhelp(self, irc, msg, args):
+        """usage: slhelp
+        display the help for this module
+        """
+        help_content= {
+            'slhelp' : 'Help for this module',
+            'sladdrent <postal code> <min surface> <max price> <min_num_room>': 'Adding a new rent search:',
+            'sladdbuy <postal code> <min surface> <max price> <min_num_room>': 'Adding a new buy search:',
+            'sllist': 'List your active searches:',
+            'sldisable <search ID>': 'Remove the given search (use sllist to get <search ID>)',
+            'slstatrent <postal code|\'all\'>': 'Print some stats about \'rent\' searches',
+            'slstatbuy <postal code|\'all\'>': 'print some stats about \'buy\' searches',
+        }
+        for cmd in help_content:
+            msg = ircutils.underline(help_content[cmd])
+            irc.reply(msg,to=user,private=True)
+            msg = cmd
+            irc.reply(msg,to=user,private=True)
+            #msg = ''
+            #irc.reply(msg,to=user,private=True)
+
+    slhelp = wrap(slhelp)
+
     def sladdbuy(self, irc, msg, args, pc, min_surf, max_price, nb_pieces):
         """usage: sladd_buy <postal code> <min surface> <max price> [<nb_pieces>]
         Adds a new buy search for you ( /!\ many messages in the first batch )
