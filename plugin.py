@@ -883,9 +883,15 @@ class SeLoger(callbacks.Plugin):
         for search in searches:
             id_search = ircutils.mircColor("ID: " + search['search_id'], 8)
             surface = ircutils.mircColor("Surface >= " + search['min_surf'], 4)
-            loyer = ircutils.mircColor("Loyer <= " + search['max_price'], 13)
+            loyer = ircutils.mircColor("Loyer/Prix <= " + search['max_price'], 13)
             cp = ircutils.mircColor("cp == " + search['cp'], 11)
-            type_ad = ircutils.mircColor("type ad == " + search['ad_type'], 14)
+            if search['ad_type'] == '2':
+                ad_type = '2 (achat)'
+            elif search['ad_type'] == '1':
+                ad_type = '1 (location)'
+            else:
+                ad_type = search['ad_type'] + ' (inconnu)'
+            type_ad = ircutils.mircColor("type ad == " + ad_type, 14)
             nb_pieces = ircutils.mircColor("Pieces >= " + search['nb_pieces'], 12)
             msg = id_search + " | " + surface + " | " + loyer + " | " + cp + " | " + type_ad + " | " + nb_pieces
             irc.reply(msg,to=user,private=True)
