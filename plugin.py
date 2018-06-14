@@ -213,7 +213,7 @@ class SqliteSeLogerDB(object):
         """
         owner_id.lower() 
         #the first url for the search
-        nb_pieces_search = ','.join([str(x) for x in range(nb_pieces_min, 20)])
+        nb_pieces_search = ','.join([str(x) for x in range(int(nb_pieces_min), 20)])
         url = 'http://ws.seloger.com/search.xml?cp=' + cp + \
         '&idqfix=1&idtt=' + ad_type + '&idtypebien=1,2&pxmax=' + max_price + \
         '&surfacemin=' + min_surf + '&nb_pieces=' + nb_pieces_search
