@@ -40,38 +40,47 @@ slhelp
 * `sladdrent <postal code> <min surface> <max price> <min_num_room>`: add a new rent search for you
 
 ```bash
-sladdrent 59000 20 600 1
+<nickname> sladdrent 59000 20 600 1
+<supyhome> Done sladd
 ```
 
 * `sladdbuy <postal code> <min surface> <max price> <min_num_room>`: add a new buy search for you
 
 ```bash
-sladdbuy 75001 20 6000000000 10
+<nickname> sladdbuy 75001 20 6000000000 10
+<supyhome> Done sladd
 ```
 
 * `sllist`: list your active searches
 
 ```bash
-sllist
+<nickname> sllist
+<supyhome> ID: d5671b6f12ebee2449f307513f3c6322 | Surface >= 20 | Loyer <= 600 | cp == 59000 | type ad == 1 | Pieces >= 1
+<supyhome> ID: 939262a37d935f4e6297de3a7afbf483 | Surface >= 20 | Loyer <= 6000000000 | cp == 75001 | type ad == 2 | Pieces >= 10
+<supyhome> Done sllist
 ```
 
 * `sldisable <search ID>`: remove the given search (use sllist to recover the <search ID>)
 
 
 ```bash
-sldisable 
+<nickname> sldisable 939262a37d935f4e6297de3a7afbf483 
 ```
 
 * `slstatrent <postal code|'all'>`: print some stats about your rent searches
 
 ```bash
-slstatrent 59000
+<nickname> slstatrent 59000
+<supyhome> [...]
+<supyhome> Done slstat
 ```
 
 * `slstatbuy <postal code|'all'>`: print some stats about your buy searches
 
 ```bash
-slstatbuy all
+<nickname> slstatbuy all
+<supyhome> [...]
+<supyhome> Done slstat
 ```
 
 This plugin replies you and sends you new adds in query.
