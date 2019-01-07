@@ -259,9 +259,16 @@ class SqliteSeLogerDB(object):
                 else:
                     values_list.append(unicode(annonce.find(val).text))
 
+            # ignore ads that are more than 30 days old
+            d = datetime.datetime.strptime(annonce.find('dtCreation').text, '%Y-%m-%dT%H:%M:%S')
+            n = datetime.datetime.now()
+            delta = n.date() - d.date()
+
             # inserting the ad information inside the table
             # ignore Viager
-            if not re.match(r'.*[Vv]iager.*', annonce.find('descriptif').text) and not re.match(r'.*/viagers/.*', annonce.find('permaLien').text):
+            if not re.match(r'.*[Vv]iager.*', annonce.find('descriptif').text) \
+		and not re.match(r'.*/viagers/.*', annonce.find('permaLien').text) \
+		and delta.days < 30:
                 cursor.execute(
                         "INSERT INTO results VALUES (" + \
                         ','.join(itertools.repeat('?', self.val_xml_count)) + ")",
